@@ -28,6 +28,12 @@ github_arguments.add_argument("--github-ref", default=GITHUB_REF)
 # github_arguments.add_argument("--workflow-event", default=GITHUB_EVENT_NAME)
 
 thresholds = parser.add_argument_group("Thresholds")
+thresholds.add_argument(
+    "--display",
+    type=bool,
+    default=False,
+    help="Display alerts that violate the threshold",
+)
 thresholds.add_argument("--action", default="break")
 thresholds.add_argument("--severity", default="Error")
 thresholds.add_argument("--list-severities", action="store_true")
@@ -75,15 +81,23 @@ if __name__ == "__main__":
         severity = alert.get("rule", {}).get("severity")
 
         if severity in severities:
-            location = alert.get("most_recent_instance", {}).get("location", {})
-            Octokit.error(
-                alert.get("tool", {}).get("name")
-                + " - "
-                + alert.get("rule", {}).get("description"),
-                file=location.get("path"),
-                line=location.get("start_line"),
-                col=location.get("start_column"),
-            )
+            if not arguments.display:
+                Octokit.debug(
+                    "Alert: {tool} - {name}".format(
+                        tool=alert.get("tool", {}).get("name"),
+                        name=alert.get("rule", {}).get("description"),
+                    )
+                )
+            else:
+                location = alert.get("most_recent_instance", {}).get("location", {})
+                Octokit.error(
+                    alert.get("tool", {}).get("name")
+                    + " - "
+                    + alert.get("rule", {}).get("description"),
+                    file=location.get("path"),
+                    line=location.get("start_line"),
+                    col=location.get("start_column"),
+                )
 
             errors += 1
 
