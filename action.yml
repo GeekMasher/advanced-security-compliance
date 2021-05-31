@@ -6,6 +6,18 @@ inputs:
     description: 'Severity Level'
     default: error
 
+  repository:
+    description: Repository owner and repo name
+    default: ${{ github.repository }}
+
+  token:
+    description: GitHub Personal Access Token
+    default: ${{ github.token }}
+  
+  ref:
+    description: GitHub Ref
+    default: ${{ github.ref }}
+
   action:
     description: 'Action to take upon discovery of security issues hitting threshold'
     default: break
@@ -24,4 +36,9 @@ runs:
     - shell: bash
       run: |
         PYTHONPATH=${{ github.action_path }} && export PYTHONPATH=${{ github.action_path }}
-        python3 -m ghascompliant --severity ${{ inputs.severity }} --action ${{ inputs.action }}
+        python3 -m ghascompliant \
+          --severity ${{ inputs.severity }} \
+          --action ${{ inputs.action }} \
+          --github-token ${{ inputs.token }} \
+          --github-repository ${{ inputs.repository }} \
+          --github-ref ${{ inputs.ref }}
