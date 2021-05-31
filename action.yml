@@ -4,6 +4,12 @@ description: 'ghascompliant'
 inputs:
   severity:
     description: 'Severity Level'
+    default: error
+
+  action:
+    description: 'Action to take upon discovery of security issues hitting threshold'
+    default: break
+
 
 runs:
   using: "composite"
@@ -18,4 +24,4 @@ runs:
     - shell: bash
       run: |
         PYTHONPATH=${{ github.action_path }} && export PYTHONPATH=${{ github.action_path }}
-        python3 -m ghascompliant --severity ${{ inputs.severity }}
+        python3 -m ghascompliant --severity ${{ inputs.severity }} --action ${{ inputs.break }}
