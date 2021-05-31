@@ -74,19 +74,7 @@ if __name__ == "__main__":
     for alert in alerts:
         severity = alert.get("rule", {}).get("severity")
 
-        if severity in severities and severity == "error":
-            location = alert.get("most_recent_instance", {}).get("location", {})
-            Octokit.error(
-                alert.get("tool", {}).get("name")
-                + " - "
-                + alert.get("rule", {}).get("description"),
-                file=location.get("path"),
-                line=location.get("start_line"),
-                col=location.get("start_column"),
-            )
-
-            errors += 1
-        elif severity in severities:
+        if severity in severities:
             location = alert.get("most_recent_instance", {}).get("location", {})
             Octokit.warning(
                 alert.get("tool", {}).get("name")
@@ -103,7 +91,8 @@ if __name__ == "__main__":
     Octokit.info("Total unacceptable alerts :: " + str(errors))
 
     if arguments.action == "break" and errors > 0:
-        raise Exception("Unacceptable Threshold of Risk has been hit!")
+        Octokit.error("Unacceptable Threshold of Risk has been hit!")
+        exit(1)
     elif arguments.action == "continue":
         Octokit.debug("Skipping threshold break check...")
     else:
