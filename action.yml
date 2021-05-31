@@ -1,0 +1,21 @@
+name: 'ghascompliant'
+description: 'ghascompliant'
+
+inputs:
+  severity:
+    description: 'Severity Level'
+
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      run: |
+        echo "::group::Installing Dependencies"
+        pushd ${{ github.action_path }}
+        python3 -m pip install pipenv && python3 -m pipenv install --system
+        popd
+        echo "::endgroup::"
+    - shell: bash
+      run: |
+        PYTHONPATH=${{ github.action_path }} && export PYTHONPATH=${{ github.action_path }}
+        python3 -m ghascompliant --severity ${{ inputs.severity }}

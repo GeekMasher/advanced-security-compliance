@@ -1,0 +1,19 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+black = "==21.5b1"
+
+[packages]
+pyyaml = "*"
+requests = "*"
+
+[requires]
+python_version = "3.9"
+
+[scripts]
+main = "python -m ghascompliant"
+tests = ""
+format = "black ."
