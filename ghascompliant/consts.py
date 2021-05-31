@@ -4,6 +4,7 @@ SEVERITIES = [
     "high",
     "error",
     "medium",
+    "moderate",  # Dependabot
     "low",
     "warning",
     # Informational issues
