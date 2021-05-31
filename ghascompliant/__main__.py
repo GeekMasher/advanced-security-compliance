@@ -1,15 +1,13 @@
-from ghascompliant.octokit.octokit import OctoRequests
 import os
 import argparse
 import logging
-
-from yaml import serialize
 
 from ghascompliant.__version__ import __name__ as tool_name, __banner__
 from ghascompliant.consts import SEVERITIES
 from ghascompliant.octokit import Octokit
 from ghascompliant.octokit.codescanning import CodeScanning
 from ghascompliant.octokit.secretscanning import SecretScanning
+from ghascompliant.octokit.dependabot import Dependabot
 
 
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
@@ -23,6 +21,7 @@ parser = argparse.ArgumentParser(tool_name)
 
 parser.add_argument("--debug", action="store_true", default=os.environ.get("DEBUG"))
 parser.add_argument("--disable-code-scanning", action="store_true")
+parser.add_argument("--disable-dependabot", action="store_true")
 parser.add_argument("--disable-secret-scanning", action="store_true")
 
 github_arguments = parser.add_argument_group("GitHub")
@@ -71,16 +70,17 @@ if __name__ == "__main__":
     # Total errors
     errors = 0
 
+    severities = SEVERITIES[: SEVERITIES.index(arguments.severity.lower()) + 1]
+    Octokit.debug("Unacceptable Severities :: " + ",".join(severities))
+
     if not arguments.disable_code_scanning:
         # Code Scanning results
         Octokit.createGroup("Code Scanning Results")
         code_scanning_errors = 0
+
         codescanning = CodeScanning(
             arguments.github_repository, token=arguments.github_token
         )
-
-        severities = SEVERITIES[: SEVERITIES.index(arguments.severity.lower()) + 1]
-        Octokit.debug("Unacceptable Severities :: " + ",".join(severities))
 
         alerts = codescanning.getOpenAlerts(params={"ref": arguments.github_ref})
         Octokit.info("Total Code Scanning Alerts :: " + str(len(alerts)))
@@ -109,8 +109,63 @@ if __name__ == "__main__":
 
                 code_scanning_errors += 1
 
-        OctoRequests.info("Code Scanning violations :: " + str(code_scanning_errors))
+        Octokit.info("Code Scanning violations :: " + str(code_scanning_errors))
         errors += code_scanning_errors
+
+        Octokit.endGroup()
+
+    if not arguments.disable_dependabot:
+        Octokit.createGroup("Dependabot Results")
+
+        dependabot_errors = 0
+
+        dependabot = Dependabot(
+            arguments.github_repository, token=arguments.github_token
+        )
+
+        alerts = dependabot.getOpenAlerts()
+        Octokit.info("Total Dependabot Alerts :: " + str(len(alerts)))
+
+        # with open("results.json", "w") as handle:
+        #     json.dump(alerts, handle, indent=2)
+
+        for alert in alerts:
+            package = alert.get("securityVulnerability", {}).get("package", {})
+            if alert.get("dismissReason") is not None:
+                Octokit.debug(
+                    "Skipping Dependabot alert :: {}={} - {} ".format(
+                        package.get("ecosystem"),
+                        package.get("name"),
+                        alert.get("dismissReason"),
+                    )
+                )
+                continue
+
+            severity = alert.get("securityAdvisory", {}).get("severity").lower()
+
+            if severity in severities:
+                if not arguments.display:
+                    Octokit.debug(
+                        "Alert: {tool} - {name}".format(
+                            tool=alert.get("tool", {}).get("name"),
+                            name=alert.get("rule", {}).get("description"),
+                        )
+                    )
+                else:
+                    location = alert.get("most_recent_instance", {}).get("location", {})
+                    Octokit.error(
+                        alert.get("tool", {}).get("name")
+                        + " - "
+                        + alert.get("rule", {}).get("description"),
+                        file=location.get("path"),
+                        line=location.get("start_line"),
+                        col=location.get("start_column"),
+                    )
+
+                dependabot_errors += 1
+
+        Octokit.info("Dependabot violations :: " + str(dependabot_errors))
+        errors += dependabot_errors
 
         Octokit.endGroup()
 
