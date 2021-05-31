@@ -6,7 +6,8 @@ from yaml import serialize
 
 from ghascompliant.__version__ import __name__ as tool_name, __banner__
 from ghascompliant.consts import SEVERITIES
-from ghascompliant.octokit import Octokit, CodeScanning
+from ghascompliant.octokit import Octokit
+from ghascompliant.octokit.codescanning import CodeScanning
 
 
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")

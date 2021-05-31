@@ -2,7 +2,6 @@ import os
 import yaml
 import logging
 import requests
-import functools
 
 from ghascompliant.__version__ import __name__
 
@@ -139,11 +138,3 @@ class OctoRequests(Octokit):
             return wrap
 
         return decorator
-
-
-class CodeScanning(OctoRequests):
-    @OctoRequests.request(
-        "GET", "/repos/{owner}/{repo}/code-scanning/alerts", params={"state": "open"}
-    )
-    def getOpenAlerts(self, response: dict = {}):
-        return response
