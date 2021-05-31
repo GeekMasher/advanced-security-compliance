@@ -1,11 +1,13 @@
 # advanced-security-compliance
 
-GitHub Advance Security Compliance Action
+This Action was designed to allow users to configure their Risk threshold for security issues reported by [GitHub Code Scanning](https://docs.github.com/en/code-security/secure-coding/automatically-scanning-your-code-for-vulnerabilities-and-errors/about-code-scanning), [Secret Scanning](https://docs.github.com/en/code-security/secret-security/about-secret-scanning) and [Dependabot Security](https://docs.github.com/en/code-security/supply-chain-security/managing-vulnerabilities-in-your-projects-dependencies/configuring-dependabot-security-updates#about-configuring-dependabot-security-updates).
 
 
 ## Usage
 
 ### Action
+
+Here is how you can quickly setup advanced-security-compliance. 
 
 ```yaml
 # Compliance
@@ -14,6 +16,8 @@ GitHub Advance Security Compliance Action
 ```
 
 ##### Action with parameters
+
+Here is a example Action with all the parameters with comments.
 
 ```yaml
 # Compliance
@@ -24,9 +28,14 @@ GitHub Advance Security Compliance Action
     # severities are included so selecting 'error' also selects 'critical' and 
     # 'high' along with 'error'.
     severity: error
-    # Repository owner/name
+    # Repository owner/name.
+    # This can be setup using a separate repository to the one being analysed 
+    #  for security compliance
     repository: GeekMasher/advanced-security-compliance
-    # GitHub Personal Access Token
+    # GitHub Personal Access Token to access the GitHub API.
+    # Secret Scanning and Dependabot do not allow their resources to be
+    #  exposed to Actions so this might need to be set using a token that has 
+    #  the ability to access the resources
     token: GITHUB_PAT
     # GitHub reference
     ref: refs/heads/main
@@ -52,6 +61,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
+      # optional - The Action requires Python 3 to be installed on the runner
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
 
       - name: Advance Security Compliance Action
         uses: GeekMasher/advanced-security-compliance@main
