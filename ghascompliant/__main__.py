@@ -123,46 +123,50 @@ if __name__ == "__main__":
             arguments.github_repository, token=arguments.github_token
         )
 
-        alerts = dependabot.getOpenAlerts()
-        Octokit.info("Total Dependabot Alerts :: " + str(len(alerts)))
+        try:
+            alerts = dependabot.getOpenAlerts()
+            Octokit.info("Total Dependabot Alerts :: " + str(len(alerts)))
 
-        # with open("results.json", "w") as handle:
-        #     json.dump(alerts, handle, indent=2)
+            # with open("results.json", "w") as handle:
+            #     json.dump(alerts, handle, indent=2)
 
-        for alert in alerts:
-            package = alert.get("securityVulnerability", {}).get("package", {})
-            if alert.get("dismissReason") is not None:
-                Octokit.debug(
-                    "Skipping Dependabot alert :: {}={} - {} ".format(
-                        package.get("ecosystem"),
-                        package.get("name"),
-                        alert.get("dismissReason"),
-                    )
-                )
-                continue
-
-            severity = alert.get("securityAdvisory", {}).get("severity").lower()
-
-            if severity in severities:
-                if not arguments.display:
+            for alert in alerts:
+                package = alert.get("securityVulnerability", {}).get("package", {})
+                if alert.get("dismissReason") is not None:
                     Octokit.debug(
-                        "Alert: {tool} - {name}".format(
-                            tool=alert.get("tool", {}).get("name"),
-                            name=alert.get("rule", {}).get("description"),
+                        "Skipping Dependabot alert :: {}={} - {} ".format(
+                            package.get("ecosystem"),
+                            package.get("name"),
+                            alert.get("dismissReason"),
                         )
                     )
-                else:
-                    location = alert.get("most_recent_instance", {}).get("location", {})
-                    Octokit.error(
-                        alert.get("tool", {}).get("name")
-                        + " - "
-                        + alert.get("rule", {}).get("description"),
-                        file=location.get("path"),
-                        line=location.get("start_line"),
-                        col=location.get("start_column"),
-                    )
+                    continue
 
-                dependabot_errors += 1
+                severity = alert.get("securityAdvisory", {}).get("severity").lower()
+
+                if severity in severities:
+                    if not arguments.display:
+                        Octokit.debug(
+                            "Alert: {tool} - {name}".format(
+                                tool=alert.get("tool", {}).get("name"),
+                                name=alert.get("rule", {}).get("description"),
+                            )
+                        )
+                    else:
+                        location = alert.get("most_recent_instance", {}).get("location", {})
+                        Octokit.error(
+                            alert.get("tool", {}).get("name")
+                            + " - "
+                            + alert.get("rule", {}).get("description"),
+                            file=location.get("path"),
+                            line=location.get("start_line"),
+                            col=location.get("start_column"),
+                        )
+
+                    dependabot_errors += 1
+
+        except Exception as err:
+            Octokit.error("Issue contacting Dependabot API (PAT scope?)")
 
         Octokit.info("Dependabot violations :: " + str(dependabot_errors))
         errors += dependabot_errors
@@ -187,7 +191,7 @@ if __name__ == "__main__":
                 errors += 1
 
         except Exception as err:
-            Octokit.warning("Issue contacting Secret Scanning API (public repo?)")
+            Octokit.error("Issue contacting Secret Scanning API (public repo?)")
 
         Octokit.endGroup()
 
