@@ -1,3 +1,4 @@
+from ghascompliant.octokit.octokit import OctoRequests
 import os
 import argparse
 import logging
@@ -8,6 +9,7 @@ from ghascompliant.__version__ import __name__ as tool_name, __banner__
 from ghascompliant.consts import SEVERITIES
 from ghascompliant.octokit import Octokit
 from ghascompliant.octokit.codescanning import CodeScanning
+from ghascompliant.octokit.secretscanning import SecretScanning
 
 
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
@@ -20,6 +22,8 @@ GITHUB_REF = os.environ.get("GITHUB_REF")
 parser = argparse.ArgumentParser(tool_name)
 
 parser.add_argument("--debug", action="store_true", default=os.environ.get("DEBUG"))
+parser.add_argument("--disable-code-scanning", action="store_true")
+parser.add_argument("--disable-secret-scanning", action="store_true")
 
 github_arguments = parser.add_argument_group("GitHub")
 github_arguments.add_argument("--github-token", default=GITHUB_TOKEN)
@@ -64,51 +68,85 @@ if __name__ == "__main__":
 
         exit(0)
 
-    codescanning = CodeScanning(
-        arguments.github_repository, token=arguments.github_token
-    )
-
-    severities = SEVERITIES[: SEVERITIES.index(arguments.severity.lower()) + 1]
-    Octokit.debug("Unacceptable Severities :: " + ",".join(severities))
-
-    Octokit.createGroup("Analysing Results")
-
-    alerts = codescanning.getOpenAlerts(params={"ref": arguments.github_ref})
-    Octokit.info("Total alerts in repository :: " + str(len(alerts)))
-
+    # Total errors
     errors = 0
 
-    for alert in alerts:
-        severity = alert.get("rule", {}).get("severity")
+    if not arguments.disable_code_scanning:
+        # Code Scanning results
+        Octokit.createGroup("Code Scanning Results")
+        code_scanning_errors = 0
+        codescanning = CodeScanning(
+            arguments.github_repository, token=arguments.github_token
+        )
 
-        if severity in severities:
-            if not arguments.display:
-                Octokit.debug(
-                    "Alert: {tool} - {name}".format(
-                        tool=alert.get("tool", {}).get("name"),
-                        name=alert.get("rule", {}).get("description"),
+        severities = SEVERITIES[: SEVERITIES.index(arguments.severity.lower()) + 1]
+        Octokit.debug("Unacceptable Severities :: " + ",".join(severities))
+
+        alerts = codescanning.getOpenAlerts(params={"ref": arguments.github_ref})
+        Octokit.info("Total Code Scanning Alerts :: " + str(len(alerts)))
+
+        for alert in alerts:
+            severity = alert.get("rule", {}).get("severity")
+
+            if severity in severities:
+                if not arguments.display:
+                    Octokit.debug(
+                        "Alert: {tool} - {name}".format(
+                            tool=alert.get("tool", {}).get("name"),
+                            name=alert.get("rule", {}).get("description"),
+                        )
                     )
-                )
-            else:
-                location = alert.get("most_recent_instance", {}).get("location", {})
-                Octokit.error(
-                    alert.get("tool", {}).get("name")
-                    + " - "
-                    + alert.get("rule", {}).get("description"),
-                    file=location.get("path"),
-                    line=location.get("start_line"),
-                    col=location.get("start_column"),
-                )
+                else:
+                    location = alert.get("most_recent_instance", {}).get("location", {})
+                    Octokit.error(
+                        alert.get("tool", {}).get("name")
+                        + " - "
+                        + alert.get("rule", {}).get("description"),
+                        file=location.get("path"),
+                        line=location.get("start_line"),
+                        col=location.get("start_column"),
+                    )
 
-            errors += 1
+                code_scanning_errors += 1
 
-    Octokit.endGroup()
+        OctoRequests.info("Code Scanning violations :: " + str(code_scanning_errors))
+        errors += code_scanning_errors
+
+        Octokit.endGroup()
+
+    if not arguments.disable_secret_scanning:
+        # Secret Scanning Results
+        Octokit.createGroup("Secret Scanning Results")
+
+        secretscanning = SecretScanning(
+            arguments.github_repository, token=arguments.github_token
+        )
+
+        try:
+            alerts = secretscanning.getOpenAlerts()
+            Octokit.info("Total Secret Scanning Alerts :: " + str(len(alerts)))
+
+            for alert in alerts:
+                Octokit.info("Unresolved Secret - {secret_type}".format(**alert))
+
+                errors += 1
+
+        except Exception as err:
+            Octokit.warning("Issue contacting Secret Scanning API (public repo?)")
+
+        Octokit.endGroup()
+
+    Octokit.createGroup("Final Checks")
+
     Octokit.info("Total unacceptable alerts :: " + str(errors))
 
     if arguments.action == "break" and errors > 0:
         Octokit.error("Unacceptable Threshold of Risk has been hit!")
+        Octokit.endGroup()
         exit(1)
     elif arguments.action == "continue":
         Octokit.debug("Skipping threshold break check...")
     else:
         Octokit.error("Unknown action type :: " + str(arguments.action))
+
+    Octokit.endGroup()

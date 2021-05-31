@@ -50,6 +50,8 @@ class Octokit:
     def createGroup(name):
         if Octokit.__EVENT__:
             print("::group::{name}".format(name=name))
+        else:
+            print("{:-^42}".format(name))
 
     @staticmethod
     def endGroup():

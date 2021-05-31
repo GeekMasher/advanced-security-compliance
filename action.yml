@@ -18,13 +18,12 @@ inputs:
     description: GitHub Ref
     default: ${{ github.ref }}
 
-  display:
-    description: 'Display alerts that violate the threshold'
-    default: false
-
   action:
     description: 'Action to take upon discovery of security issues hitting threshold'
     default: break
+
+  argvs:
+    description: 'Additional Arguments'
 
 
 runs:
@@ -43,7 +42,7 @@ runs:
         python3 -m ghascompliant \
           --severity ${{ inputs.severity }} \
           --action ${{ inputs.action }} \
-          --display ${{ inputs.display }} \
           --github-token ${{ inputs.token }} \
           --github-repository ${{ inputs.repository }} \
-          --github-ref ${{ inputs.ref }}
+          --github-ref ${{ inputs.ref }} \
+          ${{ inputs.argvs }}
