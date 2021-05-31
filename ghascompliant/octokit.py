@@ -34,12 +34,16 @@ class Octokit:
             print("[!] " + msg)
 
     @staticmethod
-    def error(msg, file=None):
+    def error(msg, file=None, line=0, col=0):
         Octokit.__ERRORS__.append(msg)
         logging.error(msg)
 
         if file:
-            print("::error file={file},line=0,col=0::{msg}".format(msg=msg, file=file))
+            print(
+                "::error file={file},line={line},col={col}::{msg}".format(
+                    msg=msg, file=file, line=line, col=col
+                )
+            )
         else:
             print("::error ::{msg}".format(msg=msg))
 

@@ -28,6 +28,7 @@ github_arguments.add_argument("--github-ref", default=GITHUB_REF)
 # github_arguments.add_argument("--workflow-event", default=GITHUB_EVENT_NAME)
 
 thresholds = parser.add_argument_group("Thresholds")
+thresholds.add_argument("--action", default="break")
 thresholds.add_argument("--severity", default="Error")
 thresholds.add_argument("--list-severities", action="store_true")
 thresholds.add_argument("--count", type=int, default=-1)
@@ -74,15 +75,32 @@ if __name__ == "__main__":
     for alert in alerts:
         severity = alert.get("rule", {}).get("severity")
 
-        if severity in severities:
+        if severity in severities and severity == "error":
+            location = alert.get("most_recent_instance", {}).get("location", {})
             Octokit.error(
-                "{name} :: {severity} />".format(
-                    severity=severity, name=alert.get("rule", {}).get("description")
-                ),
-                file=alert.get("location", {}).get("path"),
+                alert.get("rule", {}).get("description"),
+                file=location.get("path"),
+                line=location.get("start_line"),
+                col=location.get("start_column"),
+            )
+
+            errors += 1
+        elif severity in severities and severity == "warning":
+            Octokit.warning(
+                alert.get("rule", {}).get("description"),
+                file=alert.get("most_recent_instance", {})
+                .get("location", {})
+                .get("path"),
             )
 
             errors += 1
 
     Octokit.endGroup()
     Octokit.info("Total unacceptable alerts :: " + str(errors))
+
+    if arguments.action == "break" and errors > 0:
+        raise Exception("Unacceptable Threshold of Risk has been hit!")
+    elif arguments.action == "continue":
+        Octokit.debug("Skipping threshold break check...")
+    else:
+        Octokit.error("Unknown action type :: " + str(arguments.action))
