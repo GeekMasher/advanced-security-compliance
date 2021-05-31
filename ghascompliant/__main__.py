@@ -153,7 +153,9 @@ if __name__ == "__main__":
                             )
                         )
                     else:
-                        location = alert.get("most_recent_instance", {}).get("location", {})
+                        location = alert.get("most_recent_instance", {}).get(
+                            "location", {}
+                        )
                         Octokit.error(
                             alert.get("tool", {}).get("name")
                             + " - "
