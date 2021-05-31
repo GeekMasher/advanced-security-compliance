@@ -24,4 +24,4 @@ runs:
     - shell: bash
       run: |
         PYTHONPATH=${{ github.action_path }} && export PYTHONPATH=${{ github.action_path }}
-        python3 -m ghascompliant --severity ${{ inputs.severity }} --action ${{ inputs.break }}
+        python3 -m ghascompliant --severity ${{ inputs.severity }} --action ${{ inputs.action }}
