@@ -1,7 +1,7 @@
 import json
 import requests
 from string import Template
-from ghascompliant.octokit.octokit import OctoRequests, Octokit
+from ghascompliance.octokit.octokit import OctoRequests, Octokit
 
 GRAPHQL_GET_INFO = """\
 {

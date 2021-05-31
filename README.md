@@ -1,4 +1,4 @@
-# advanced-security-compliant
+# advanced-security-compliance
 
 GitHub Advance Security Compliance Action
 
@@ -10,7 +10,7 @@ GitHub Advance Security Compliance Action
 ```yaml
 # Compliance
 - name: Advance Security Compliance Action
-  uses: GeekMasher/advanced-security-compliant@main
+  uses: GeekMasher/advanced-security-compliance@main
 ```
 
 ##### Action with parameters
@@ -18,14 +18,14 @@ GitHub Advance Security Compliance Action
 ```yaml
 # Compliance
 - name: Advance Security Compliance Action
-  uses: GeekMasher/advanced-security-compliant@main
+  uses: GeekMasher/advanced-security-compliance@main
   with:
     # Set the severity levels which to set the threshold. All previous 
     # severities are included so selecting 'error' also selects 'critical' and 
     # 'high' along with 'error'.
     severity: error
     # Repository owner/name
-    repository: GeekMasher/advanced-security-compliant
+    repository: GeekMasher/advanced-security-compliance
     # GitHub Personal Access Token
     token: GITHUB_PAT
     # GitHub reference
@@ -54,5 +54,5 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Advance Security Compliance Action
-        uses: GeekMasher/advanced-security-compliant@main
+        uses: GeekMasher/advanced-security-compliance@main
 ```

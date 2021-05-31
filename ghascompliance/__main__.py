@@ -2,12 +2,12 @@ import os
 import argparse
 import logging
 
-from ghascompliant.__version__ import __name__ as tool_name, __banner__
-from ghascompliant.consts import SEVERITIES
-from ghascompliant.octokit import Octokit
-from ghascompliant.octokit.codescanning import CodeScanning
-from ghascompliant.octokit.secretscanning import SecretScanning
-from ghascompliant.octokit.dependabot import Dependabot
+from ghascompliance.__version__ import __name__ as tool_name, __banner__
+from ghascompliance.consts import SEVERITIES
+from ghascompliance.octokit import Octokit
+from ghascompliance.octokit.codescanning import CodeScanning
+from ghascompliance.octokit.secretscanning import SecretScanning
+from ghascompliance.octokit.dependabot import Dependabot
 
 
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")

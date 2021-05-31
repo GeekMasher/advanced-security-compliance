@@ -2,7 +2,7 @@
 __version__ = "0.1.0"
 
 __title__ = "GitHub Advanced Security Compliant"
-__name__ = "ghascompliant"
+__name__ = "ghascompliance"
 
 __description__ = "GitHub Advanced Security Compliant Action"
 __summary__ = """\

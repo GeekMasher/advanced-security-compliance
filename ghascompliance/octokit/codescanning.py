@@ -1,4 +1,4 @@
-from ghascompliant.octokit.octokit import OctoRequests
+from ghascompliance.octokit.octokit import OctoRequests
 
 
 class CodeScanning(OctoRequests):

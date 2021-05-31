@@ -3,7 +3,7 @@ import yaml
 import logging
 import requests
 
-from ghascompliant.__version__ import __name__
+from ghascompliance.__version__ import __name__
 
 
 class Octokit:

@@ -1,5 +1,5 @@
-name: 'ghascompliant'
-description: 'ghascompliant'
+name: 'ghascompliance'
+description: 'ghascompliance'
 
 inputs:
   severity:
@@ -39,7 +39,7 @@ runs:
     - shell: bash
       run: |
         PYTHONPATH=${{ github.action_path }} && export PYTHONPATH=${{ github.action_path }}
-        python3 -m ghascompliant \
+        python3 -m ghascompliance \
           --severity ${{ inputs.severity }} \
           --action ${{ inputs.action }} \
           --github-token ${{ inputs.token }} \
