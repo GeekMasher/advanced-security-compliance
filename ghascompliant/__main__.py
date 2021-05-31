@@ -77,19 +77,24 @@ if __name__ == "__main__":
         if severity in severities and severity == "error":
             location = alert.get("most_recent_instance", {}).get("location", {})
             Octokit.error(
-                alert.get("rule", {}).get("description"),
+                alert.get("tool", {}).get("name")
+                + " - "
+                + alert.get("rule", {}).get("description"),
                 file=location.get("path"),
                 line=location.get("start_line"),
                 col=location.get("start_column"),
             )
 
             errors += 1
-        elif severity in severities and severity == "warning":
+        elif severity in severities:
+            location = alert.get("most_recent_instance", {}).get("location", {})
             Octokit.warning(
-                alert.get("rule", {}).get("description"),
-                file=alert.get("most_recent_instance", {})
-                .get("location", {})
-                .get("path"),
+                alert.get("tool", {}).get("name")
+                + " - "
+                + alert.get("rule", {}).get("description"),
+                file=location.get("path"),
+                line=location.get("start_line"),
+                col=location.get("start_column"),
             )
 
             errors += 1
