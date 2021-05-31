@@ -43,7 +43,7 @@ runs:
         python3 -m ghascompliant \
           --severity ${{ inputs.severity }} \
           --action ${{ inputs.action }} \
-          --display ${{ inputs.display }}
+          --display ${{ inputs.display }} \
           --github-token ${{ inputs.token }} \
           --github-repository ${{ inputs.repository }} \
           --github-ref ${{ inputs.ref }}
