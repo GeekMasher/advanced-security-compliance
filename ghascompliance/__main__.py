@@ -27,6 +27,7 @@ parser.add_argument(
 )
 parser.add_argument("--disable-code-scanning", action="store_true")
 parser.add_argument("--disable-dependabot", action="store_true")
+parser.add_argument("--disable-dependabot-licensing", action="store_true")
 parser.add_argument("--disable-secret-scanning", action="store_true")
 
 github_arguments = parser.add_argument_group("GitHub")
@@ -208,6 +209,41 @@ if __name__ == "__main__":
 
         Octokit.info("Dependabot violations :: " + str(dependabot_errors))
         errors += dependabot_errors
+
+        Octokit.endGroup()
+
+    # Dependabot Licensing
+    if not arguments.disable_dependabot_licensing:
+        Octokit.createGroup("Dependency Graph Results - Lisencing")
+
+        licensing_errors = 0
+
+        dependabot = Dependabot(
+            arguments.github_repository, token=arguments.github_token
+        )
+
+        try:
+            alerts = dependabot.getLicenseInfo()
+            Octokit.info("Total Dependency Graph Dependencies :: " + str(len(alerts)))
+
+            for dependency in alerts:
+                Octokit.debug(" > {name} ({manager}) - {lisence}".format(**dependency))
+
+                if policy.checkLisencingViolation(dependency.get("lisence")):
+                    if arguments.display:
+                        Octokit.error(
+                            "Dependency Graph Alert :: {name} ({manager}) = {lisence}".format(
+                                **dependency
+                            )
+                        )
+
+                    licensing_errors += 1
+
+        except Exception as err:
+            Octokit.error("Issue contacting Dependency Graph API")
+            raise err
+
+        Octokit.info("Dependency Graph violations :: " + str(licensing_errors))
 
         Octokit.endGroup()
 

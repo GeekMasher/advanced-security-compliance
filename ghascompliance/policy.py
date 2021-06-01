@@ -4,7 +4,7 @@ import shutil
 import tempfile
 import subprocess
 from urllib.parse import urlparse
-from ghascompliance.consts import SEVERITIES, TECHNOLOGIES
+from ghascompliance.consts import SEVERITIES, TECHNOLOGIES, LICENSES
 from ghascompliance.octokit import Octokit
 
 
@@ -131,3 +131,7 @@ class Policy:
             severities = []
 
         return severity in severities
+
+    def checkLisencingViolation(self, license):
+        license = license.lower()
+        return license in [l.lower() for l in LICENSES]
