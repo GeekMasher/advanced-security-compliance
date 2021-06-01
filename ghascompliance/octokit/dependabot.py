@@ -35,6 +35,28 @@ GRAPHQL_LICENSE_INFO = """\
         licenseInfo {
             name
         }
+        dependencyGraphManifests {
+        totalCount
+        edges {
+            node {
+                filename
+                dependencies{
+                    edges {
+                        node {
+                            packageName
+                            packageManager
+                            requirements
+                            repository {
+                                licenseInfo {
+                                    name
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        }
     }
 }
 """
@@ -44,6 +66,8 @@ class Dependabot(OctoRequests):
     def __init__(self, repository, token):
         instance = "https://api.github.com/graphql"
         super().__init__(repository=repository, token=token, instance=instance)
+
+        self.headers["Accept"] = "application/vnd.github.hawkgirl-preview+json"
 
     def getOpenAlerts(self, response: dict = {}):
 
@@ -97,4 +121,40 @@ class Dependabot(OctoRequests):
             Octokit.error(json.dumps(response, indent=2))
             raise Exception("Query failed to run")
 
-        return response
+        results = []
+
+        repo = response.get("data", {}).get("repository", {})
+        # repo_name = repo.get('name')
+        # repo_license = repo.get('licenseInfo', {}).get('name')
+
+        manifests = repo.get("dependencyGraphManifests", {}).get("edges", [])
+
+        for manifest in manifests:
+            manifest = manifest.get("node", {})
+            manifest_path = manifest.get("filename")
+
+            dependencies = manifest.get("dependencies", {}).get("edges", [])
+
+            for dependency in dependencies:
+                dependency = dependency.get("node", {})
+
+                dependency_manager = dependency.get("packageManager", "NA")
+
+                dependency_name = dependency.get("packageName", "NA")
+                dependency_lisence = dependency.get("repository", {}).get("licenseInfo")
+                if not dependency_lisence:
+                    dependency_lisence_name = "NA"
+                else:
+                    dependency_lisence_name = dependency_lisence.get("name", "NA")
+
+                Octokit.debug(f" > {dependency_name} == {dependency_lisence_name}")
+
+                results.append(
+                    {
+                        "name": dependency_name,
+                        "manager": dependency_manager,
+                        "lisence": dependency_lisence_name,
+                    }
+                )
+
+        return results
