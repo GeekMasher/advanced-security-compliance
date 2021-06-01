@@ -71,7 +71,7 @@ class Policy:
         # set 'general' to the current minimum
         if not policy.get("general", {}).get("level"):
             policy["general"] = {}
-            policy["general"]["level"] = self.risk_level
+            policy["general"]["level"] = self.risk_level.lower()
 
         for tech in TECHNOLOGIES:
             # if the tech doesn't exists, we'll use general

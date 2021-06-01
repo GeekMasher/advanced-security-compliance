@@ -114,7 +114,9 @@ if __name__ == "__main__":
 
     if arguments.display:
         for plcy, data in policy.policy.items():
-            Octokit.info(" > {policy} == '{}'".format(policy=plcy, data.get('level')))
+            Octokit.info(
+                " > {policy} == '{level}'".format(policy=plcy, level=data.get("level"))
+            )
 
     Octokit.endGroup()
 
