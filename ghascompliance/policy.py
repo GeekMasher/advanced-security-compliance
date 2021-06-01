@@ -80,6 +80,8 @@ class Policy:
                 if not policy.get(tech).get("level"):
                     raise Exception("Policy Schema check failed")
 
+        Octokit.info("Policy loaded successfully")
+
         self.policy = policy
 
     def _buildSeverityList(self, severity):

@@ -197,7 +197,6 @@ if __name__ == "__main__":
 
         except Exception as err:
             Octokit.error("Issue contacting Dependabot API (PAT scope?)")
-            raise err
 
         Octokit.info("Dependabot violations :: " + str(dependabot_errors))
         errors += dependabot_errors
