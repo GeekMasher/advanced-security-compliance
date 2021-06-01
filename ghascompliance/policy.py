@@ -37,7 +37,10 @@ class Policy:
 
     def loadFromRepo(self):
         instance = urlparse(self.instance).netloc
-        repo = "https://" + self.token + "@" + instance + "/" + self.repository
+        if self.token:
+            repo = "https://" + self.token + "@" + instance + "/" + self.repository
+        else:
+            repo = "https://" + instance + "/" + self.repository
 
         temp_path = os.path.join(tempfile.gettempdir(), "repo")
 
