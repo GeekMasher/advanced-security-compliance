@@ -46,6 +46,23 @@ Here is a example Action with all the parameters with comments.
     argvs: '--disable-secret-scanning --disable-dependabot'
 ```
 
+##### Policy as Code
+
+Here is an example of using a simple yet cross-organization using Policy as Code:
+
+```yaml
+# Compliance
+- name: Advance Security Compliance Action
+  uses: GeekMasher/advanced-security-compliance@main
+  with:
+    # The owner/repo of where the policy is stored  
+    policy: GeekMasher/security-queries
+    # The local (within the workspace) or repository
+    policy-path: policies/default.yml
+    # The branch you want to target
+    policy-branch: main
+```
+
 
 ##### Full Example
 
@@ -57,8 +74,13 @@ on:
     branches: [ main, master, develop, release-* ]
 
 jobs:
+  # Code Scanning Steps
+  # ...
   compliance:
     runs-on: ubuntu-latest
+    # [optional] Run this job after a Code Scanning job
+    # needs:
+    #   - codeql
     steps:
       - uses: actions/checkout@v2
 
