@@ -87,7 +87,7 @@ if __name__ == "__main__":
 
     policy_location = None
 
-    Octokit.debug("Loading Policy as Code...")
+    Octokit.createGroup("Policy as Code")
     if arguments.github_policy and arguments.github_policy != "":
         # Process [org]/repo
         if "/" in arguments.github_policy:
@@ -111,6 +111,8 @@ if __name__ == "__main__":
         token=arguments.github_token,
         instance=arguments.github_instance,
     )
+
+    Octokit.endGroup()
 
     # Total errors
     errors = 0
