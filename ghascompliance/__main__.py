@@ -6,6 +6,7 @@ import logging
 from ghascompliance.__version__ import __name__ as tool_name, __banner__
 from ghascompliance.consts import SEVERITIES
 from ghascompliance.octokit import Octokit
+from ghascompliance.policy import Policy
 from ghascompliance.octokit.codescanning import CodeScanning
 from ghascompliance.octokit.secretscanning import SecretScanning
 from ghascompliance.octokit.dependabot import Dependabot
@@ -13,6 +14,7 @@ from ghascompliance.octokit.dependabot import Dependabot
 
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 GITHUB_REPOSITORY = os.environ.get("GITHUB_REPOSITORY")
+GITHUB_OWNER = os.environ.get("GITHUB_OWNER")
 GITHUB_EVENT_NAME = os.environ.get("GITHUB_EVENT_NAME")
 # GITHUB_EVENT_PATH = os.environ.get("GITHUB_EVENT_PATH")
 GITHUB_REF = os.environ.get("GITHUB_REF")
@@ -29,10 +31,14 @@ parser.add_argument("--disable-secret-scanning", action="store_true")
 
 github_arguments = parser.add_argument_group("GitHub")
 github_arguments.add_argument("--github-token", default=GITHUB_TOKEN)
+github_arguments.add_argument("--github-instance", default="https://github.com")
 github_arguments.add_argument("--github-repository", default=GITHUB_REPOSITORY)
 # github_arguments.add_argument("--github-event", default=GITHUB_EVENT_PATH)
 github_arguments.add_argument("--github-ref", default=GITHUB_REF)
 # github_arguments.add_argument("--workflow-event", default=GITHUB_EVENT_NAME)
+github_arguments.add_argument("--github-policy")
+github_arguments.add_argument("--github-policy-branch", default="main")
+github_arguments.add_argument("--github-policy-path", default="policy.yml")
 
 thresholds = parser.add_argument_group("Thresholds")
 thresholds.add_argument(
@@ -63,6 +69,7 @@ if __name__ == "__main__":
     if GITHUB_EVENT_NAME is not None:
         Octokit.__EVENT__ = True
         # Octokit.loadEvents(arguments.github_event)
+        arguments.display = True
 
     if not arguments.github_token:
         raise Exception("Github Access Token required")
@@ -78,11 +85,35 @@ if __name__ == "__main__":
     if arguments.debug:
         os.makedirs("results", exist_ok=True)
 
+    policy_location = None
+
+    Octokit.debug("Loading Policy as Code...")
+    if arguments.github_policy:
+        # Process [org]/repo
+        if "/" in arguments.github_policy:
+            policy_location = arguments.github_policy
+        else:
+            if GITHUB_OWNER is None:
+                raise Exception("GitHub Owner/Repo not provided")
+            policy_location = GITHUB_OWNER + "/" + arguments.github_policy
+
+        Octokit.info(
+            "Loading Policy as Code from Repository - {}/{}/{}".format(
+                arguments.github_instance, policy_location, arguments.github_policy_path
+            )
+        )
+
+    # Load policy engine
+    policy = Policy(
+        severity=arguments.severity,
+        repository=policy_location,
+        path=arguments.github_policy_path,
+        token=arguments.github_token,
+        instance=arguments.github_instance,
+    )
+
     # Total errors
     errors = 0
-
-    severities = SEVERITIES[: SEVERITIES.index(arguments.severity.lower()) + 1]
-    Octokit.debug("Unacceptable Severities :: " + ",".join(severities))
 
     if not arguments.disable_code_scanning:
         # Code Scanning results
@@ -103,7 +134,7 @@ if __name__ == "__main__":
         for alert in alerts:
             severity = alert.get("rule", {}).get("severity")
 
-            if severity in severities:
+            if policy.checkViolation(severity, "codescanning"):
                 if arguments.display:
                     location = alert.get("most_recent_instance", {}).get("location", {})
                     Octokit.error(
@@ -153,7 +184,7 @@ if __name__ == "__main__":
 
                 severity = alert.get("securityAdvisory", {}).get("severity").lower()
 
-                if severity in severities:
+                if policy.checkViolation(severity, "dependabot"):
                     if arguments.display:
                         Octokit.error(
                             "Dependabot Alert :: {}={}".format(
@@ -190,8 +221,11 @@ if __name__ == "__main__":
                     json.dump(alerts, handle, indent=2)
 
             for alert in alerts:
-                if arguments.display:
-                    Octokit.info("Unresolved Secret - {secret_type}".format(**alert))
+                if policy.checkViolation("critical", "secretscanning"):
+                    if arguments.display:
+                        Octokit.info(
+                            "Unresolved Secret - {secret_type}".format(**alert)
+                        )
 
                 errors += 1
 
