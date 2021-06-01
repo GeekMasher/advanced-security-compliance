@@ -248,7 +248,6 @@ if __name__ == "__main__":
 
         except Exception as err:
             Octokit.error("Issue contacting Dependency Graph API")
-            raise err
 
         Octokit.info("Dependency Graph violations :: " + str(licensing_errors))
 
