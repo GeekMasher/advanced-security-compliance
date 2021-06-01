@@ -1,4 +1,5 @@
 import os
+import json
 import argparse
 import logging
 
@@ -12,14 +13,16 @@ from ghascompliance.octokit.dependabot import Dependabot
 
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 GITHUB_REPOSITORY = os.environ.get("GITHUB_REPOSITORY")
-# GITHUB_EVENT_NAME = os.environ.get("GITHUB_EVENT_NAME")
+GITHUB_EVENT_NAME = os.environ.get("GITHUB_EVENT_NAME")
 # GITHUB_EVENT_PATH = os.environ.get("GITHUB_EVENT_PATH")
 GITHUB_REF = os.environ.get("GITHUB_REF")
 
 
 parser = argparse.ArgumentParser(tool_name)
 
-parser.add_argument("--debug", action="store_true", default=os.environ.get("DEBUG"))
+parser.add_argument(
+    "--debug", action="store_true", default=bool(os.environ.get("DEBUG"))
+)
 parser.add_argument("--disable-code-scanning", action="store_true")
 parser.add_argument("--disable-dependabot", action="store_true")
 parser.add_argument("--disable-secret-scanning", action="store_true")
@@ -34,8 +37,7 @@ github_arguments.add_argument("--github-ref", default=GITHUB_REF)
 thresholds = parser.add_argument_group("Thresholds")
 thresholds.add_argument(
     "--display",
-    type=bool,
-    default=False,
+    action="store_true",
     help="Display alerts that violate the threshold",
 )
 thresholds.add_argument("--action", default="break")
@@ -50,11 +52,17 @@ if __name__ == "__main__":
 
     logging.basicConfig(
         filename="ghas-compliant.log",
-        level=logging.DEBUG,
+        level=logging.DEBUG if arguments.debug else logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
 
-    # Octokit.loadEvents(arguments.github_event)
+    if arguments.debug:
+        Octokit.debug("Debugging enabled")
+
+    # TODO: Should load the event.json
+    if GITHUB_EVENT_NAME is not None:
+        Octokit.__EVENT__ = True
+        # Octokit.loadEvents(arguments.github_event)
 
     if not arguments.github_token:
         raise Exception("Github Access Token required")
@@ -66,6 +74,9 @@ if __name__ == "__main__":
             Octokit.info(" -> {}".format(severity))
 
         exit(0)
+
+    if arguments.debug:
+        os.makedirs("results", exist_ok=True)
 
     # Total errors
     errors = 0
@@ -85,18 +96,15 @@ if __name__ == "__main__":
         alerts = codescanning.getOpenAlerts(params={"ref": arguments.github_ref})
         Octokit.info("Total Code Scanning Alerts :: " + str(len(alerts)))
 
+        if arguments.debug:
+            with open("results/code-scanning.json", "w") as handle:
+                json.dump(alerts, handle, indent=2)
+
         for alert in alerts:
             severity = alert.get("rule", {}).get("severity")
 
             if severity in severities:
-                if not arguments.display:
-                    Octokit.debug(
-                        "Alert: {tool} - {name}".format(
-                            tool=alert.get("tool", {}).get("name"),
-                            name=alert.get("rule", {}).get("description"),
-                        )
-                    )
-                else:
+                if arguments.display:
                     location = alert.get("most_recent_instance", {}).get("location", {})
                     Octokit.error(
                         alert.get("tool", {}).get("name")
@@ -127,16 +135,17 @@ if __name__ == "__main__":
             alerts = dependabot.getOpenAlerts()
             Octokit.info("Total Dependabot Alerts :: " + str(len(alerts)))
 
-            # with open("results.json", "w") as handle:
-            #     json.dump(alerts, handle, indent=2)
+            if arguments.debug:
+                with open("results/dependabot.json", "w") as handle:
+                    json.dump(alerts, handle, indent=2)
 
             for alert in alerts:
                 package = alert.get("securityVulnerability", {}).get("package", {})
                 if alert.get("dismissReason") is not None:
                     Octokit.debug(
                         "Skipping Dependabot alert :: {}={} - {} ".format(
-                            package.get("ecosystem"),
-                            package.get("name"),
+                            package.get("ecosystem", "N/A"),
+                            package.get("name", "N/A"),
                             alert.get("dismissReason"),
                         )
                     )
@@ -145,30 +154,19 @@ if __name__ == "__main__":
                 severity = alert.get("securityAdvisory", {}).get("severity").lower()
 
                 if severity in severities:
-                    if not arguments.display:
-                        Octokit.debug(
-                            "Alert: {tool} - {name}".format(
-                                tool=alert.get("tool", {}).get("name"),
-                                name=alert.get("rule", {}).get("description"),
-                            )
-                        )
-                    else:
-                        location = alert.get("most_recent_instance", {}).get(
-                            "location", {}
-                        )
+                    if arguments.display:
                         Octokit.error(
-                            alert.get("tool", {}).get("name")
-                            + " - "
-                            + alert.get("rule", {}).get("description"),
-                            file=location.get("path"),
-                            line=location.get("start_line"),
-                            col=location.get("start_column"),
+                            "Dependabot Alert :: {}={}".format(
+                                package.get("ecosystem", "N/A"),
+                                package.get("name", "N/A"),
+                            )
                         )
 
                     dependabot_errors += 1
 
         except Exception as err:
             Octokit.error("Issue contacting Dependabot API (PAT scope?)")
+            raise err
 
         Octokit.info("Dependabot violations :: " + str(dependabot_errors))
         errors += dependabot_errors
@@ -187,8 +185,13 @@ if __name__ == "__main__":
             alerts = secretscanning.getOpenAlerts()
             Octokit.info("Total Secret Scanning Alerts :: " + str(len(alerts)))
 
+            if arguments.debug:
+                with open("results/secretscanning.json", "w") as handle:
+                    json.dump(alerts, handle, indent=2)
+
             for alert in alerts:
-                Octokit.info("Unresolved Secret - {secret_type}".format(**alert))
+                if arguments.display:
+                    Octokit.info("Unresolved Secret - {secret_type}".format(**alert))
 
                 errors += 1
 

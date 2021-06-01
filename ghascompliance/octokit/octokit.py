@@ -19,7 +19,7 @@ class Octokit:
 
     def debug(msg):
         logging.debug(msg)
-        if Octokit.__EVENT__:
+        if Octokit.logger.level == logging.DEBUG and Octokit.__EVENT__:
             print("::debug :: {msg}".format(msg=msg))
         elif Octokit.logger.level == logging.DEBUG:
             print("[*] " + msg)
