@@ -88,14 +88,15 @@ class Policy:
         self.policy = policy
 
     def _buildSeverityList(self, severity):
-        if severity is 'none':
+        severity = severity.lower()
+        if severity == "none":
             Octokit.debug("No Unacceptable Severities")
             return []
-        elif severity is 'all':
+        elif severity == "all":
             Octokit.debug("Unacceptable Severities :: " + ",".join(SEVERITIES))
             return SEVERITIES
         else:
-            severities = SEVERITIES[: SEVERITIES.index(severity.lower()) + 1]
+            severities = SEVERITIES[: SEVERITIES.index(severity) + 1]
             Octokit.debug("Unacceptable Severities :: " + ",".join(severities))
         return severities
 
