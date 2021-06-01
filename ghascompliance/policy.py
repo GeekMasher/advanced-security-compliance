@@ -88,8 +88,15 @@ class Policy:
         self.policy = policy
 
     def _buildSeverityList(self, severity):
-        severities = SEVERITIES[: SEVERITIES.index(severity.lower()) + 1]
-        Octokit.debug("Unacceptable Severities :: " + ",".join(severities))
+        if severity is 'none':
+            Octokit.debug("No Unacceptable Severities")
+            return []
+        elif severity is 'all':
+            Octokit.debug("Unacceptable Severities :: " + ",".join(SEVERITIES))
+            return SEVERITIES
+        else:
+            severities = SEVERITIES[: SEVERITIES.index(severity.lower()) + 1]
+            Octokit.debug("Unacceptable Severities :: " + ",".join(severities))
         return severities
 
     def checkViolation(self, severity, technology=None):
