@@ -30,9 +30,9 @@ class Policy:
         self.repository = repository
         self.repository_path = path
 
-        if repository:
+        if repository and repository != "":
             self.loadFromRepo()
-        elif path:
+        elif path and path != "":
             self.loadLocalConfig(path)
 
     def loadFromRepo(self):
@@ -40,11 +40,13 @@ class Policy:
         repo = "https://" + self.token + "@" + instance + "/" + self.repository
 
         temp_path = os.path.join(tempfile.gettempdir(), "repo")
+
         if os.path.exists(temp_path):
             Octokit.debug("Deleting existing temp path")
             shutil.rmtree(temp_path)
 
-        Octokit.info(f"Cloning policy repo - {repo}")
+        Octokit.info(f"Cloning policy repo - {self.repository}")
+
         with open(os.devnull, "w") as null:
             subprocess.run(
                 ["git", "clone", "--depth=1", repo, temp_path], stdout=null, stderr=null
@@ -72,7 +74,9 @@ class Policy:
             policy["general"]["level"] = self.risk_level
 
         for tech in TECHNOLOGIES:
+            # if the tech doesn't exists, we'll use general
             if policy.get(tech):
+                # enforce each tech has a level
                 if not policy.get(tech).get("level"):
                     raise Exception("Policy Schema check failed")
 
