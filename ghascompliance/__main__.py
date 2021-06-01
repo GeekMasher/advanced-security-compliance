@@ -248,7 +248,7 @@ if __name__ == "__main__":
         exit(1)
     elif arguments.action == "continue":
         Octokit.debug("Skipping threshold break check...")
-    elif errors > 0:
+    elif errors == 0:
         Octokit.info("Acceptable risk and no threshold reached.")
     else:
         Octokit.error("Unknown action type :: " + str(arguments.action))
