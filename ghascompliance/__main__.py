@@ -241,17 +241,12 @@ if __name__ == "__main__":
 
         Octokit.endGroup()
 
-    Octokit.createGroup("Final Checks")
-
     Octokit.info("Total unacceptable alerts :: " + str(errors))
 
     if arguments.action == "break" and errors > 0:
         Octokit.error("Unacceptable Threshold of Risk has been hit!")
-        Octokit.endGroup()
         exit(1)
     elif arguments.action == "continue":
         Octokit.debug("Skipping threshold break check...")
     else:
         Octokit.error("Unknown action type :: " + str(arguments.action))
-
-    Octokit.endGroup()
