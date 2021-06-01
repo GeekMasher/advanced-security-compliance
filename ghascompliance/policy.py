@@ -134,4 +134,25 @@ class Policy:
 
     def checkLisencingViolation(self, license):
         license = license.lower()
+
+        # Policy as Code
+        if self.policy and self.policy.get("licensing"):
+            return self.checkLisencingViolationAgainstPolicy(license)
+
         return license in [l.lower() for l in LICENSES]
+
+    def checkLisencingViolationAgainstPolicy(self, license):
+        policy = self.policy.get("licensing")
+
+        ingores = [ign.lower() for ign in policy.get("ingores", {}).get("name", [])]
+        conditions = [
+            ign.lower() for ign in policy.get("conditions", {}).get("name", [])
+        ]
+
+        if license in ingores:
+            return False
+
+        elif license in conditions:
+            return True
+
+        return False
