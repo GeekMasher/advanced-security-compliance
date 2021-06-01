@@ -212,7 +212,7 @@ if __name__ == "__main__":
                     dependabot_errors += 1
 
         except Exception as err:
-            Octokit.error("Issue contacting Dependabot API (PAT scope?)")
+            Octokit.error(str(err))
 
         Octokit.info("Dependabot violations :: " + str(dependabot_errors))
         errors += dependabot_errors
@@ -246,8 +246,12 @@ if __name__ == "__main__":
 
                     licensing_errors += 1
 
+            if arguments.debug:
+                with open("results/lisencing.json", "w") as handle:
+                    json.dump(alerts, handle, indent=2)
+
         except Exception as err:
-            Octokit.error("Issue contacting Dependency Graph API")
+            Octokit.error(str(err))
 
         Octokit.info("Dependency Graph violations :: " + str(licensing_errors))
 
@@ -279,7 +283,7 @@ if __name__ == "__main__":
                 errors += 1
 
         except Exception as err:
-            Octokit.error("Issue contacting Secret Scanning API (public repo?)")
+            Octokit.error(str(err))
 
         Octokit.endGroup()
 
