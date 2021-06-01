@@ -10,3 +10,5 @@ SEVERITIES = [
     # Informational issues
     "notes",
 ]
+
+TECHNOLOGIES = ["codescanning", "dependabot", "secretscanning"]

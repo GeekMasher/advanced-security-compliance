@@ -1,0 +1,36 @@
+
+# Here is a list of all the different Security Levels available from all the 
+#  GitHub tools/products
+# - critical
+# - high
+# - error
+# - medium
+# - moderate
+# - low
+# - warning
+# - notes
+
+# Optionally you can also use:
+# - `all`
+#   - allows any security alert
+# - `none`
+#   - disallows any security alert
+
+
+# `general` is used as a default for any missing policy
+general:
+  # The level for general is automatically set to `error` by default by the 
+  #  engine.
+  level: error
+
+# `codescanning` is anything that uses GitHub's Advanced Security feature 
+codescanning:
+  level: error
+ 
+# `dependabot` is anything that uses GitHub's Dependabot / Enterprise feature
+dependabot:
+  level: high
+
+# `secretscanning` is anything that uses GitHub's Advanced Security feature 
+secretscanning:
+  level: all

@@ -37,14 +37,16 @@ class Octokit:
         Octokit.__ERRORS__.append(msg)
         logging.error(msg)
 
-        if file:
+        if Octokit.__EVENT__:
+            print("::error ::{msg}".format(msg=msg))
+        elif file:
             print(
                 "::error file={file},line={line},col={col}::{msg}".format(
                     msg=msg, file=file, line=line, col=col
                 )
             )
         else:
-            print("::error ::{msg}".format(msg=msg))
+            print("[!] {msg}".format(msg=msg))
 
     @staticmethod
     def createGroup(name):
