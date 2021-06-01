@@ -103,6 +103,13 @@ if __name__ == "__main__":
                 arguments.github_instance, policy_location, arguments.github_policy_path
             )
         )
+    elif arguments.github_policy_path:
+        if not os.path.exists(arguments.github_policy_path):
+            arguments.github_policy_path = None
+        else:
+            Octokit.debug(
+                "Policy config file set: {}".format(arguments.github_policy_path)
+            )
 
     # Load policy engine
     policy = Policy(
