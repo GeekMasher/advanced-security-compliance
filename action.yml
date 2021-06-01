@@ -22,6 +22,17 @@ inputs:
     description: 'Action to take upon discovery of security issues hitting threshold'
     default: break
 
+  policy:
+    description: Policy as Code repository owner/repo name
+
+  policy-path:
+    description: Policy as Code file path (including path in repo)
+
+  policy-branch:
+    description: Policy as Code branch
+    default: main
+
+
   argvs:
     description: 'Additional Arguments'
 
@@ -45,4 +56,7 @@ runs:
           --github-token ${{ inputs.token }} \
           --github-repository ${{ inputs.repository }} \
           --github-ref ${{ inputs.ref }} \
+          --github-policy ${{ inputs.policy }} \
+          --github-policy-path ${{ inputs.policy-path }} \
+          --github-policy-branch ${{ inputs.policy-branch }} \
           ${{ inputs.argvs }}
