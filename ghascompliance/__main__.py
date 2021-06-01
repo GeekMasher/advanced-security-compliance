@@ -112,6 +112,10 @@ if __name__ == "__main__":
         instance=arguments.github_instance,
     )
 
+    if arguments.display:
+        for plcy, data in policy.policy.items():
+            Octokit.info(" > {policy} == '{}'".format(policy=plcy, data.get('level')))
+
     Octokit.endGroup()
 
     # Total errors
