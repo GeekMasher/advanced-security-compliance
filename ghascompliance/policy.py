@@ -100,23 +100,54 @@ class Policy:
             Octokit.debug("Unacceptable Severities :: " + ",".join(severities))
         return severities
 
-    def checkViolation(self, severity, technology=None):
+    def checkViolation(self, severity, technology=None, name=None, id=None):
         severity = severity.lower()
 
         if self.policy:
-            return self.checkViolationAgainstPolicy(severity, technology)
+            return self.checkViolationAgainstPolicy(
+                severity, technology, name=name, id=id
+            )
         else:
             if severity not in SEVERITIES:
                 Octokit.warning(f"Unknown Severity used - {severity}")
 
             return severity in self.severities
 
-    def checkViolationAgainstPolicy(self, severity, technology):
+    def checkViolationAgainstPolicy(self, severity, technology, name=None, id=None):
         severities = []
         level = "all"
 
         if technology:
-            if self.policy.get(technology):
+            policy = self.policy.get(technology)
+            if policy:
+                if name:
+                    check_name = str(name).lower()
+                    condition_names = [
+                        ign.lower()
+                        for ign in policy.get("conditions", {}).get("name", [])
+                    ]
+                    ingores_names = [
+                        ign.lower() for ign in policy.get("ignores", {}).get("name", [])
+                    ]
+                    if check_name in ingores_names:
+                        return False
+                    elif check_name in condition_names:
+                        return True
+
+                if id:
+                    check_id = str(id).lower()
+                    condition_ids = [
+                        ign.lower()
+                        for ign in policy.get("conditions", {}).get("id", [])
+                    ]
+                    ingores_ids = [
+                        ign.lower() for ign in policy.get("ignores", {}).get("id", [])
+                    ]
+                    if check_id in ingores_ids:
+                        return False
+                    elif check_id in condition_ids:
+                        return True
+
                 level = self.policy.get(technology, {}).get("level")
                 severities = self._buildSeverityList(level)
             else:

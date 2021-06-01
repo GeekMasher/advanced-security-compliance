@@ -150,13 +150,16 @@ if __name__ == "__main__":
         for alert in alerts:
             severity = alert.get("rule", {}).get("severity")
 
-            if policy.checkViolation(severity, "codescanning"):
+            rule_name = alert.get("rule", {}).get("description")
+            rule_id = alert.get("rule", {}).get("id")
+
+            if policy.checkViolation(
+                severity, "codescanning", name=rule_name, id=rule_id
+            ):
                 if arguments.display:
                     location = alert.get("most_recent_instance", {}).get("location", {})
                     Octokit.error(
-                        alert.get("tool", {}).get("name")
-                        + " - "
-                        + alert.get("rule", {}).get("description"),
+                        alert.get("tool", {}).get("name") + " - " + rule_name,
                         file=location.get("path"),
                         line=location.get("start_line"),
                         col=location.get("start_column"),
@@ -188,6 +191,7 @@ if __name__ == "__main__":
 
             for alert in alerts:
                 package = alert.get("securityVulnerability", {}).get("package", {})
+
                 if alert.get("dismissReason") is not None:
                     Octokit.debug(
                         "Skipping Dependabot alert :: {}={} - {} ".format(
@@ -200,7 +204,10 @@ if __name__ == "__main__":
 
                 severity = alert.get("securityAdvisory", {}).get("severity").lower()
 
-                if policy.checkViolation(severity, "dependabot"):
+                alert_id = alert.get("securityAdvisory", {}).get("ghsaId").lower()
+                # Alert name support?
+
+                if policy.checkViolation(severity, "dependabot", id=alert_id):
                     if arguments.display:
                         Octokit.error(
                             "Dependabot Alert :: {}={}".format(
