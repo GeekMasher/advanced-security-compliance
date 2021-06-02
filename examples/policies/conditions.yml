@@ -1,0 +1,32 @@
+
+codescanning:
+  level: error
+  conditions:
+    id:
+      - java/sql-injection
+  ignores:
+    id:
+      - js/log-injection
+    name:
+      - "Missing rate limiting"
+
+dependabot:
+  level: high
+  conditions:
+    id:
+      - GHSA-446m-mv8f-q348
+  ignores:
+    id:
+      - GHSA-mh5c-679w-hh4r
+
+licensing:
+  conditions:
+    name:
+      - GPL-2.0
+      - GPL-3.0
+  ignores:
+    name:
+      - MIT License
+
+secretscanning:
+  level: all
