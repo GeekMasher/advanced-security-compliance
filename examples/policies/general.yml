@@ -1,0 +1,6 @@
+
+# `general` is used as a default for any missing policy
+general:
+  # The level for general is automatically set to `error` by default by the 
+  #  engine.
+  level: error
