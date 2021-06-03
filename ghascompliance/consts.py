@@ -33,4 +33,8 @@ API_ERRORS = [
         "message": "Secret scanning APIs are not available on public repositories",
         "raise": False,
     },
+    {
+        "message": "Repository is not part of an organization.",
+        "raise": False
+    }
 ]
