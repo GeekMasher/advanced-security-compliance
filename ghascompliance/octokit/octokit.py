@@ -1,10 +1,12 @@
 import os
+import json
 import yaml
 import logging
 import requests
 from urllib.parse import urlparse
 
 from ghascompliance.__version__ import __name__
+from ghascompliance.consts import API_ERRORS
 
 
 class GitHub:
@@ -164,6 +166,21 @@ class OctoRequests(Octokit):
         frmt = string.format(**self.github.__dict__, **kwargs)
         return frmt
 
+    @staticmethod
+    def checkErrors(name):
+        for error in API_ERRORS:
+            if error.get("message") == name:
+                Octokit.debug("Known error :: " + error.get("message"))
+
+                message = error.get("pretty", error.get("message"))
+                Octokit.warning(message)
+
+                if error.get("raise"):
+                    raise Exception(message)
+                return True
+
+        return False
+
     def request(method, url, params={}):
         def decorator(func):
             def wrap(self, **kwargs):
@@ -171,7 +188,7 @@ class OctoRequests(Octokit):
                 full_response = []
                 per_page = 100
 
-                Octokit.debug("OctoRequests :: {}".format(func.__name__))
+                Octokit.debug("OctoRequests :: {}".format(func))
 
                 full_params = {**params, **kwargs.get("params", {})}
 
@@ -186,11 +203,22 @@ class OctoRequests(Octokit):
                         method, full_url, headers=self.headers, params=full_params
                     )
 
-                    if response.status_code != 200:
-                        Octokit.error(response.text)
-                        raise Exception("OctoRequest failed :: " + full_url)
+                    json_data = response.json()
 
-                    full_response.extend(response.json())
+                    if response.status_code != 200:
+                        if not OctoRequests.checkErrors(json_data.get("message")):
+                            # Throw unknown errors
+                            Octokit.error(json.dumps(json_data, indent=2))
+                            raise Exception("Failed to execute OctoRequest")
+                        break
+
+                    if isinstance(json_data, dict) and json_data.get("errors"):
+                        if not OctoRequests.checkErrors(json_data.get("message")):
+                            # Throw unknown errors
+                            Octokit.error(json.dumps(json_data, indent=2))
+                            raise Exception("Failed to execute OctoRequest")
+
+                    full_response.extend(json_data)
                     if len(response.json()) < per_page:
                         break
 

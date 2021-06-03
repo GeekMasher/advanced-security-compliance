@@ -35,7 +35,7 @@ jobs:
       - name: Run Full Scenario (Private repo)
         run: |
           pipenv run main \
-            --github-repository GeekMasher/advanced-security-compliance-test \
+            --github-repository GeekMasherOrg/Pixi \
             --github-ref refs/heads/master \
             --github-token ${{ secrets.FULL_SCOPE_TOKEN }} \
             --action continue

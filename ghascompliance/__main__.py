@@ -3,7 +3,7 @@ import json
 import argparse
 import logging
 
-from ghascompliance.__version__ import __name__ as tool_name, __banner__
+from ghascompliance.__version__ import __name__ as tool_name, __banner__, __url__
 from ghascompliance.consts import SEVERITIES
 from ghascompliance.octokit import Octokit, GitHub
 from ghascompliance.policy import Policy
@@ -133,18 +133,26 @@ if __name__ == "__main__":
 
     errors = 0
 
-    if not arguments.disable_code_scanning:
-        errors += checks.checkCodeScanning()
+    try:
+        if not arguments.disable_code_scanning:
+            errors += checks.checkCodeScanning()
 
-    if not arguments.disable_dependabot:
-        errors += checks.checkDependabot()
+        if not arguments.disable_dependabot:
+            errors += checks.checkDependabot()
 
-    # Dependabot Licensing
-    if not arguments.disable_dependency_licensing:
-        errors += checks.checkDependencyLicensing()
+        # Dependabot Licensing
+        if not arguments.disable_dependency_licensing:
+            errors += checks.checkDependencyLicensing()
 
-    if not arguments.disable_secret_scanning:
-        errors += checks.checkSecretScanning()
+        if not arguments.disable_secret_scanning:
+            errors += checks.checkSecretScanning()
+
+    except Exception as err:
+        Octokit.error("Unknown Exception was hit, please repo this to " + __url__)
+        Octokit.error(str(err))
+
+        if arguments.debug:
+            raise err
 
     Octokit.info("Total unacceptable alerts :: " + str(errors))
 
