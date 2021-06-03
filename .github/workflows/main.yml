@@ -9,18 +9,21 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  run:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v2
-
       - uses: actions/setup-python@v2
         with:
           python-version: '3.9'
 
       - name: Install Deps
         run: python3 -m pip install pipenv && python3 -m pipenv install
+
+      # Unit tests
+      - name: Run Unit tests
+        run: pipenv run python -m unittest discover -s ./tests -p "test_*.py"
 
       # Secret Scanning will not work
       - name: Run Full Scenario (Public repo)
