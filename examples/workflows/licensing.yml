@@ -1,0 +1,22 @@
+name: Licensing Compliance
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+jobs:
+  licensing:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Advance Security Compliance Action
+      uses: GeekMasher/advanced-security-compliance@policy
+      with:
+        # We'll need an access token that can call the GraphQL GitHub API to get
+        #  all the of the licensing data.
+        token: ${{ secrets.ACCESS_TOKEN }}
+        # Disable everything else to check for and focus on licensing
+        argvs: '--disable-dependabot --disable-secret-scanning --disable-code-scanning'

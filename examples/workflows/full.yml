@@ -1,0 +1,54 @@
+name: Fully Compliant
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+jobs:
+  licensing:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Advance Security Compliance Action
+      uses: GeekMasher/advanced-security-compliance@main
+      with:
+        # Set the severity levels which to set the threshold. All previous 
+        # severities are included so selecting 'error' also selects 'critical' and 
+        # 'high' along with 'error'.
+        severity: error
+
+        # Repository owner/name.
+        # This can be setup using a separate repository to the one being analysed 
+        #  for security compliance
+        repository: GeekMasher/advanced-security-compliance
+
+        # The owner/repo of where the policy is stored
+        # This generally is primarily used for a single repository that defines 
+        #  your organizations security policy
+        policy: GeekMasher/security-queries
+
+        # The path where the policy lives. This might be in either the current 
+        #  repository or in a remote repository.
+        policy-path: policies/default.yml
+
+        # The branch you want to target using `policy` argument
+        policy-branch: main
+
+        # GitHub Personal Access Token to access the GitHub API.
+        # Secret Scanning and Dependabot do not allow their resources to be
+        #  exposed to Actions so this might need to be set using a token that has 
+        #  the ability to access the resources
+        token: ${{ secrets.ACCESS_TOKEN }}
+
+        # [optional] GitHub reference, this is passed in by Actions at runtime
+        ref: refs/heads/main
+
+        # [optional] What course of action to take upon discovering security issues that pass
+        # threshold?
+        action: break
+
+        # [optional] Additional arguments
+        argvs: '--disable-secret-scanning --disable-dependabot'

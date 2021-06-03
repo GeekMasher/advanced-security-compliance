@@ -1,0 +1,34 @@
+name: Licensing Compliance
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+jobs:
+  licensing:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Advance Security Compliance Action
+      uses: GeekMasher/advanced-security-compliance@policy
+      with:
+        # The owner/repo of where the policy is stored
+        # This generally is primarily used for a single repository that defines 
+        #  your organizations security policy
+        policy: GeekMasher/security-queries
+
+        # The path where the policy lives. This might be in either the current 
+        #  repository or in a remote repository.
+        policy-path: policies/default.yml
+
+        # The branch you want to target using `policy` argument
+        policy-branch: main
+
+        # GitHub Personal Access Token to access the GitHub API.
+        # Secret Scanning and Dependabot do not allow their resources to be
+        #  exposed to Actions so this might need to be set using a token that has 
+        #  the ability to access the resources
+        token: ${{ secrets.ACCESS_TOKEN }}
