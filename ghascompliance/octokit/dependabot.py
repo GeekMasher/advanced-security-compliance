@@ -1,7 +1,7 @@
 import json
 import requests
 from string import Template
-from ghascompliance.octokit.octokit import OctoRequests, Octokit
+from ghascompliance.octokit.octokit import GitHub, OctoRequests, Octokit
 
 GRAPHQL_GET_INFO = """\
 {
@@ -63,15 +63,15 @@ GRAPHQL_LICENSE_INFO = """\
 
 
 class Dependabot(OctoRequests):
-    def __init__(self, repository, token):
+    def __init__(self, github: GitHub):
         instance = "https://api.github.com/graphql"
-        super().__init__(repository=repository, token=token, instance=instance)
+        super().__init__(github=github)
 
         self.headers["Accept"] = "application/vnd.github.hawkgirl-preview+json"
 
     def getOpenAlerts(self, response: dict = {}):
 
-        variables = {"owner": self.owner, "repo": self.repo}
+        variables = {"owner": self.github.owner, "repo": self.github.repo}
 
         query = Template(GRAPHQL_GET_INFO).substitute(**variables)
 
@@ -100,7 +100,7 @@ class Dependabot(OctoRequests):
         return data
 
     def getLicenseInfo(self, response: dict = {}):
-        variables = {"owner": self.owner, "repo": self.repo}
+        variables = {"owner": self.github.owner, "repo": self.github.repo}
 
         query = Template(GRAPHQL_LICENSE_INFO).substitute(**variables)
 
