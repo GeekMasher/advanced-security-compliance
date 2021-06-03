@@ -22,8 +22,20 @@ jobs:
       - name: Install Deps
         run: python3 -m pip install pipenv && python3 -m pipenv install
 
-      - name: Run Full Scenario
+      # Secret Scanning will not work
+      - name: Run Full Scenario (Public repo)
         run: |
           pipenv run main \
+            --github-repository GeekMasher/Pixi \
+            --github-ref refs/heads/master \
+            --github-token ${{ secrets.FULL_SCOPE_TOKEN }} \
+            --action continue \
+            --disable-secret-scanning
+
+      - name: Run Full Scenario (Private repo)
+        run: |
+          pipenv run main \
+            --github-repository GeekMasher/advanced-security-compliance-test \
+            --github-ref refs/heads/master \
             --github-token ${{ secrets.FULL_SCOPE_TOKEN }} \
             --action continue
