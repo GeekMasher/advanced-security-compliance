@@ -1,4 +1,4 @@
-name: 
+name: Main
 
 on:
   push:
@@ -17,8 +17,8 @@ jobs:
 
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.8'
-      
+          python-version: '3.9'
+
       - name: Install Deps
         run: python3 -m pip install pipenv && python3 -m pipenv install --system
 
