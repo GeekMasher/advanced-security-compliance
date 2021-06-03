@@ -122,7 +122,7 @@ if __name__ == "__main__":
         instance=arguments.github_instance,
     )
 
-    if arguments.display:
+    if arguments.display and policy.policy:
         for plcy, data in policy.policy.items():
             Octokit.info(
                 " > {policy} == '{level}'".format(policy=plcy, level=data.get("level"))
