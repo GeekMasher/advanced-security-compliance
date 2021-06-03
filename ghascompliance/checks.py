@@ -82,44 +82,39 @@ class Checks:
 
         dependabot = Dependabot(self.github)
 
-        try:
-            alerts = dependabot.getOpenAlerts()
-            Octokit.info("Total Dependabot Alerts :: " + str(len(alerts)))
+        alerts = dependabot.getOpenAlerts()
+        Octokit.info("Total Dependabot Alerts :: " + str(len(alerts)))
 
-            self.writeResults("dependabot", alerts)
+        self.writeResults("dependabot", alerts)
 
-            for alert in alerts:
-                package = alert.get("securityVulnerability", {}).get("package", {})
+        for alert in alerts:
+            package = alert.get("securityVulnerability", {}).get("package", {})
 
-                if alert.get("dismissReason") is not None:
-                    Octokit.debug(
-                        "Skipping Dependabot alert :: {}={} - {} ".format(
+            if alert.get("dismissReason") is not None:
+                Octokit.debug(
+                    "Skipping Dependabot alert :: {}={} - {} ".format(
+                        package.get("ecosystem", "N/A"),
+                        package.get("name", "N/A"),
+                        alert.get("dismissReason"),
+                    )
+                )
+                continue
+
+            severity = alert.get("securityAdvisory", {}).get("severity").lower()
+
+            alert_id = alert.get("securityAdvisory", {}).get("ghsaId").lower()
+            # Alert name support?
+
+            if self.policy.checkViolation(severity, "dependabot", id=alert_id):
+                if self.display:
+                    Octokit.error(
+                        "Dependabot Alert :: {}={}".format(
                             package.get("ecosystem", "N/A"),
                             package.get("name", "N/A"),
-                            alert.get("dismissReason"),
                         )
                     )
-                    continue
 
-                severity = alert.get("securityAdvisory", {}).get("severity").lower()
-
-                alert_id = alert.get("securityAdvisory", {}).get("ghsaId").lower()
-                # Alert name support?
-
-                if self.policy.checkViolation(severity, "dependabot", id=alert_id):
-                    if self.display:
-                        Octokit.error(
-                            "Dependabot Alert :: {}={}".format(
-                                package.get("ecosystem", "N/A"),
-                                package.get("name", "N/A"),
-                            )
-                        )
-
-                    dependabot_errors += 1
-
-        except Exception as err:
-            Octokit.error(str(err))
-            raise err
+                dependabot_errors += 1
 
         Octokit.info("Dependabot violations :: " + str(dependabot_errors))
 
@@ -134,27 +129,23 @@ class Checks:
 
         dependabot = Dependabot(self.github)
 
-        try:
-            alerts = dependabot.getLicenseInfo()
-            Octokit.info("Total Dependency Graph Dependencies :: " + str(len(alerts)))
+        alerts = dependabot.getLicenseInfo()
+        Octokit.info("Total Dependency Graph Dependencies :: " + str(len(alerts)))
 
-            self.writeResults("licensing", alerts)
+        self.writeResults("licensing", alerts)
 
-            for dependency in alerts:
-                Octokit.debug(" > {name} ({manager}) - {lisence}".format(**dependency))
+        for dependency in alerts:
+            Octokit.debug(" > {name} ({manager}) - {lisence}".format(**dependency))
 
-                if self.policy.checkLisencingViolation(dependency.get("lisence")):
-                    if self.display:
-                        Octokit.error(
-                            "Dependency Graph Alert :: {name} ({manager}) = {lisence}".format(
-                                **dependency
-                            )
+            if self.policy.checkLisencingViolation(dependency.get("lisence")):
+                if self.display:
+                    Octokit.error(
+                        "Dependency Graph Alert :: {name} ({manager}) = {lisence}".format(
+                            **dependency
                         )
+                    )
 
-                    licensing_errors += 1
-
-        except Exception as err:
-            Octokit.error(str(err))
+                licensing_errors += 1
 
         Octokit.info("Dependency Graph violations :: " + str(licensing_errors))
 
@@ -170,23 +161,17 @@ class Checks:
 
         secretscanning = SecretScanning(self.github)
 
-        try:
-            alerts = secretscanning.getOpenAlerts()
-            Octokit.info("Total Secret Scanning Alerts :: " + str(len(alerts)))
+        alerts = secretscanning.getOpenAlerts()
+        Octokit.info("Total Secret Scanning Alerts :: " + str(len(alerts)))
 
-            self.writeResults("secretscanning", alerts)
+        self.writeResults("secretscanning", alerts)
 
-            for alert in alerts:
-                if self.policy.checkViolation("critical", "secretscanning"):
-                    if self.display:
-                        Octokit.info(
-                            "Unresolved Secret - {secret_type}".format(**alert)
-                        )
+        for alert in alerts:
+            if self.policy.checkViolation("critical", "secretscanning"):
+                if self.display:
+                    Octokit.info("Unresolved Secret - {secret_type}".format(**alert))
 
-                secrets_errors += 1
-
-        except Exception as err:
-            Octokit.error(str(err))
+            secrets_errors += 1
 
         Octokit.info("Secret Scanning violations :: " + str(secrets_errors))
 
