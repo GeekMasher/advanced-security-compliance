@@ -22,12 +22,8 @@ jobs:
       - name: Install Deps
         run: python3 -m pip install pipenv && python3 -m pipenv install --system
 
-  full:
-    runs-on: ubuntu-latest
-    needs: [ 'build' ]
-
-    steps:
       - name: Run Full Scenario
         run: |
           pipenv run main \
-            --github-token ${{ secrets.FULL_SCOPE_TOKEN }}
+            --github-token ${{ secrets.FULL_SCOPE_TOKEN }} \
+            --action continue
