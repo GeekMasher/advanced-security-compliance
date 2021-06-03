@@ -20,7 +20,7 @@ jobs:
           python-version: '3.9'
 
       - name: Install Deps
-        run: python3 -m pip install pipenv && python3 -m pipenv install --system
+        run: python3 -m pip install pipenv && python3 -m pipenv install
 
       - name: Run Full Scenario
         run: |
