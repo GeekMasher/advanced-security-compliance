@@ -7,8 +7,16 @@ from urllib.parse import urlparse
 from ghascompliance.consts import SEVERITIES, TECHNOLOGIES, LICENSES
 from ghascompliance.octokit import Octokit
 
+__ROOT__ = os.path.dirname(os.path.basename(__file__))
+__SCHEMA_VALIDATION__ = "Schema Validation Failed :: {msg} - {value}"
+
 
 class Policy:
+
+    __BLOCK_ITEMS__ = ["ids", "names", "imports"]
+    __SECTION_ITEMS__ = ["level", "conditions", "warnings", "ignores"]
+    __IMPORT_ALLOWED_TYPES__ = ["txt"]
+
     def __init__(
         self,
         severity=None,
@@ -30,6 +38,8 @@ class Policy:
         self.repository = repository
         self.repository_path = path
 
+        self.temp_repo = None
+
         if repository and repository != "":
             self.loadFromRepo()
         elif path and path != "":
@@ -42,23 +52,25 @@ class Policy:
         else:
             repo = "https://" + instance + "/" + self.repository
 
-        temp_path = os.path.join(tempfile.gettempdir(), "repo")
+        self.temp_repo = os.path.join(tempfile.gettempdir(), "repo")
 
-        if os.path.exists(temp_path):
+        if os.path.exists(self.temp_repo):
             Octokit.debug("Deleting existing temp path")
-            shutil.rmtree(temp_path)
+            shutil.rmtree(self.temp_repo)
 
         Octokit.info(f"Cloning policy repo - {self.repository}")
 
         with open(os.devnull, "w") as null:
             subprocess.run(
-                ["git", "clone", "--depth=1", repo, temp_path], stdout=null, stderr=null
+                ["git", "clone", "--depth=1", repo, self.temp_repo],
+                stdout=null,
+                stderr=null,
             )
 
-        if not os.path.exists(temp_path):
+        if not os.path.exists(self.temp_repo):
             raise Exception("Repository failed to clone")
 
-        full_path = os.path.join(temp_path, self.repository_path)
+        full_path = os.path.join(self.temp_repo, self.repository_path)
 
         self.loadLocalConfig(full_path)
 
@@ -77,15 +89,104 @@ class Policy:
             policy["general"]["level"] = self.risk_level.lower()
 
         for tech in TECHNOLOGIES:
-            # if the tech doesn't exists, we'll use general
-            if policy.get(tech):
-                # enforce each tech has a level
-                if not policy.get(tech).get("level"):
-                    raise Exception("Policy Schema check failed")
+            # Importing files
+            policy[tech] = self.loadPolicySection(
+                tech, policy.get(tech, policy["general"])
+            )
 
         Octokit.info("Policy loaded successfully")
 
         self.policy = policy
+
+    def loadPolicySection(self, name: str, data: dict):
+        for section, section_data in data.items():
+            # check if only certain sections are present
+            if section not in Policy.__SECTION_ITEMS__:
+                raise Exception(
+                    __SCHEMA_VALIDATION__.format(
+                        msg="Disallowed Section present", value=section
+                    )
+                )
+
+            # Skip level
+            if section == "level" and isinstance(section_data, str):
+                continue
+
+            # Validate blocks
+            for block in list(section_data):
+                if block not in Policy.__BLOCK_ITEMS__:
+                    raise Exception(
+                        __SCHEMA_VALIDATION__.format(
+                            msg="Disallowed Block present", value=block
+                        )
+                    )
+
+            # Importing
+            if section_data.get("imports"):
+                if section_data.get("imports", {}).get("imports"):
+                    raise Exception(
+                        __SCHEMA_VALIDATION__.format(
+                            msg="Circular import", value="imports"
+                        )
+                    )
+
+                for block in Policy.__BLOCK_ITEMS__:
+
+                    Octokit.debug(f"Importing > {section} - {block}")
+
+                    import_path = section_data.get("imports", {}).get(block)
+                    if import_path and isinstance(import_path, str):
+                        if section_data.get(block):
+                            section_data[block].extend(
+                                self.loadPolicyImport(import_path)
+                            )
+                        else:
+                            section_data[block] = self.loadPolicyImport(import_path)
+
+        return data
+
+    def loadPolicyImport(self, path):
+        results = []
+        traversal = False
+        paths = [
+            # Current Working Dir
+            (os.getcwd(), path),
+            # Temp Repo / Cloned Repo
+            (str(self.temp_repo), path),
+            # Action / CLI directory
+            (__ROOT__, path),
+        ]
+        for root, path in paths:
+            full_path = os.path.abspath(os.path.join(root, path))
+
+            if os.path.exists(full_path) and os.path.isfile(full_path):
+                if full_path.startswith(tempfile.gettempdir()):
+                    Octokit.debug("Temp location used for import path")
+                elif not full_path.startswith(root):
+                    Octokit.error("Attempting to import file :: " + full_path)
+                    raise Exception("Path Traversal Detected, halting import!")
+
+                # TODO: MIME type checking?
+                _, fileext = os.path.splitext(full_path)
+                fileext = fileext.replace(".", "")
+
+                if fileext not in Policy.__IMPORT_ALLOWED_TYPES__:
+                    Octokit.warning(
+                        "Trying to load a disallowed file type :: " + fileext
+                    )
+                    continue
+
+                Octokit.info("Importing Path :: " + full_path)
+
+                with open(full_path, "r") as handle:
+                    for line in handle:
+                        line = line.replace("\n", "").replace("\b", "")
+                        if line == "" or line.startswith("#"):
+                            continue
+                        results.append(line)
+
+                break
+        return results
 
     def _buildSeverityList(self, severity):
         severity = severity.lower()
@@ -163,27 +264,57 @@ class Policy:
 
         return severity in severities
 
-    def checkLisencingViolation(self, license):
+    def checkLisencingViolation(self, license, dependency={}):
         license = license.lower()
 
         # Policy as Code
         if self.policy and self.policy.get("licensing"):
-            return self.checkLisencingViolationAgainstPolicy(license)
+            return self.checkLisencingViolationAgainstPolicy(license, dependency)
 
         return license in [l.lower() for l in LICENSES]
 
-    def checkLisencingViolationAgainstPolicy(self, license):
+    def checkLisencingViolationAgainstPolicy(self, license, dependency={}):
         policy = self.policy.get("licensing")
+        license = license.lower()
 
-        ingores = [ign.lower() for ign in policy.get("ingores", {}).get("name", [])]
-        conditions = [
-            ign.lower() for ign in policy.get("conditions", {}).get("name", [])
+        dependency_name = dependency.get("name")
+        dependency_manager = dependency.get("manager")
+        dependency_full = f"{dependency_manager}/{dependency_name}"
+
+        warning_ids = [wrn.lower() for wrn in policy.get("warnings", {}).get("ids", [])]
+        warning_names = [
+            wrn.lower() for wrn in policy.get("warnings", {}).get("names", [])
         ]
 
-        if license in ingores:
+        if license in warning_ids or (
+            dependency_name in warning_names or dependency_full in warning_names
+        ):
+            Octokit.warning(
+                "Dependency License Warning :: {manager}/{name} = {lisence}".format(
+                    **dependency
+                )
+            )
+
+        ingore_ids = [ign.lower() for ign in policy.get("ingores", {}).get("ids", [])]
+        ingore_names = [
+            ign.lower() for ign in policy.get("ingores", {}).get("names", [])
+        ]
+
+        condition_ids = [
+            ign.lower() for ign in policy.get("conditions", {}).get("ids", [])
+        ]
+        conditions_names = [
+            ign.lower() for ign in policy.get("conditions", {}).get("names", [])
+        ]
+
+        if license in ingore_ids or (
+            dependency_name in ingore_names or dependency_full in ingore_names
+        ):
             return False
 
-        elif license in conditions:
+        elif license in condition_ids or (
+            dependency_name in conditions_names or dependency_full in conditions_names
+        ):
             return True
 
         return False

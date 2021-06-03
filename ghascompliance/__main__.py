@@ -37,7 +37,9 @@ github_arguments.add_argument("--github-ref", default=GITHUB_REF)
 # github_arguments.add_argument("--workflow-event", default=GITHUB_EVENT_NAME)
 github_arguments.add_argument("--github-policy")
 github_arguments.add_argument("--github-policy-branch", default="main")
-github_arguments.add_argument("--github-policy-path", default="policy.yml")
+github_arguments.add_argument(
+    "--github-policy-path", default="ghascompliance/defaults/policy.yml"
+)
 
 thresholds = parser.add_argument_group("Thresholds")
 thresholds.add_argument(
