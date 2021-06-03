@@ -137,7 +137,9 @@ class Checks:
         for dependency in alerts:
             Octokit.debug(" > {name} ({manager}) - {lisence}".format(**dependency))
 
-            if self.policy.checkLisencingViolation(dependency.get("lisence")):
+            if self.policy.checkLisencingViolation(
+                dependency.get("lisence"), dependency
+            ):
                 if self.display:
                     Octokit.error(
                         "Dependency Graph Alert :: {name} ({manager}) = {lisence}".format(
