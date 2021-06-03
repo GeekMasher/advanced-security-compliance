@@ -64,12 +64,8 @@ if __name__ == "__main__":
     if arguments.debug:
         Octokit.debug("Debugging enabled")
 
-    # TODO: Should load the event.json
     if GITHUB_EVENT_NAME is not None:
         Octokit.__EVENT__ = True
-        # Octokit.loadEvents(arguments.github_event)
-        # TODO: This might need to be hidden
-        arguments.display = True
 
     if not arguments.github_token:
         raise Exception("Github Access Token required")
@@ -107,9 +103,10 @@ if __name__ == "__main__":
         )
     elif arguments.github_policy_path:
         if not os.path.exists(arguments.github_policy_path):
+            Octokit.debug("Policy config file not present on system, skipping...")
             arguments.github_policy_path = None
         else:
-            Octokit.debug(
+            Octokit.info(
                 "Policy config file set: {}".format(arguments.github_policy_path)
             )
 
@@ -121,6 +118,8 @@ if __name__ == "__main__":
         token=arguments.github_token,
         instance=arguments.github_instance,
     )
+
+    Octokit.info("Finished loading policy")
 
     if arguments.display and policy.policy:
         for plcy, data in policy.policy.items():
