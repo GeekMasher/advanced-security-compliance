@@ -188,7 +188,7 @@ class OctoRequests(Octokit):
                 full_response = []
                 per_page = 100
 
-                Octokit.debug("OctoRequests :: {}".format(func.__name__))
+                Octokit.debug("OctoRequests :: {}".format(func))
 
                 full_params = {**params, **kwargs.get("params", {})}
 
