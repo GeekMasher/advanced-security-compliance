@@ -2,8 +2,74 @@ import os
 import yaml
 import logging
 import requests
+from urllib.parse import urlparse
 
 from ghascompliance.__version__ import __name__
+
+
+class GitHub:
+    def __init__(
+        self,
+        repository=None,
+        token=None,
+        instance="https://github.com",
+        ref=None,
+        **kwargs
+    ):
+        self.__dict__ = dict()
+
+        self.owner = None
+        self.repo = None
+        self.set("repository", repository)
+
+        if "/" in self.repository:
+            owner, repo = self.repository.split("/", 1)
+            self.set("owner", owner)
+            self.set("repo", repo)
+        else:
+            self.set("owner", "")
+            self.set("repo", repository)
+
+        self.set("token", token)
+        # TODO: Validate instance
+        url = urlparse(instance)
+        self.set("instance", instance)
+        # TODO: Validate API url
+        api = url.scheme + "://api." + url.netloc
+        self.set("api.rest", api)
+        self.set("api.graphql", api + "/graphql")
+        # TODO: Validate ref; examples: refs/heads/main
+        self.set("ref", ref)
+
+    def set(self, key, value, default=None):
+        if value:
+            self.__dict__.__setitem__(key, value)
+        else:
+            self.__dict__.__setitem__(key, default)
+
+    def get(self, key, default=None):
+        result = self.__getitem__(key)
+        return result if result else default
+
+    def __getitem__(self, key):
+        return self.__dict__[key]
+
+    def __repr__(self):
+        return repr(self.__dict__)
+
+    @property
+    def url(self):
+        return "https://" + self.instance + "/" + self.repository
+
+    @property
+    def cloneUrl(self):
+        instance = urlparse(self.instance).netloc
+        if self.token:
+            # Public / Private repos
+            return "https://" + self.token + "@" + instance + "/" + self.repository
+        else:
+            # Public repos
+            return "https://" + instance + "/" + self.repository
 
 
 class Octokit:
@@ -84,29 +150,24 @@ class Octokit:
 
 
 class OctoRequests(Octokit):
-    def __init__(self, repository=None, token=None, instance="https://api.github.com"):
-        self.repository = repository
-        self.owner, self.repo = repository.split("/", 1)
-        self.token = token
-        self.instance = instance
+    def __init__(self, github: GitHub):
+        self.github = github
 
         self.headers = {
             "Accept": "application/vnd.github.v3+json",
-            "Authorization": "token " + self.token,
+            "Authorization": "token " + self.github.token,
         }
 
         super().__init__()
 
     def format(self, string: str, **kwargs):
-        frmt = string.format(
-            repositor=self.repository, owner=self.owner, repo=self.repo, **kwargs
-        )
+        frmt = string.format(**self.github.__dict__, **kwargs)
         return frmt
 
     def request(method, url, params={}):
         def decorator(func):
             def wrap(self, **kwargs):
-                full_url = self.instance + self.format(url)
+                full_url = self.github.get("api.rest") + self.format(url)
                 full_response = []
                 per_page = 100
 

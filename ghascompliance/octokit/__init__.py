@@ -1,1 +1,1 @@
-from ghascompliance.octokit.octokit import Octokit
+from ghascompliance.octokit.octokit import Octokit, GitHub

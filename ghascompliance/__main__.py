@@ -5,11 +5,9 @@ import logging
 
 from ghascompliance.__version__ import __name__ as tool_name, __banner__
 from ghascompliance.consts import SEVERITIES
-from ghascompliance.octokit import Octokit
+from ghascompliance.octokit import Octokit, GitHub
 from ghascompliance.policy import Policy
-from ghascompliance.octokit.codescanning import CodeScanning
-from ghascompliance.octokit.secretscanning import SecretScanning
-from ghascompliance.octokit.dependabot import Dependabot
+from ghascompliance.checks import *
 
 
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
@@ -27,7 +25,7 @@ parser.add_argument(
 )
 parser.add_argument("--disable-code-scanning", action="store_true")
 parser.add_argument("--disable-dependabot", action="store_true")
-parser.add_argument("--disable-dependabot-licensing", action="store_true")
+parser.add_argument("--disable-dependency-licensing", action="store_true")
 parser.add_argument("--disable-secret-scanning", action="store_true")
 
 github_arguments = parser.add_argument_group("GitHub")
@@ -70,6 +68,7 @@ if __name__ == "__main__":
     if GITHUB_EVENT_NAME is not None:
         Octokit.__EVENT__ = True
         # Octokit.loadEvents(arguments.github_event)
+        # TODO: This might need to be hidden
         arguments.display = True
 
     if not arguments.github_token:
@@ -77,14 +76,17 @@ if __name__ == "__main__":
     if not arguments.github_repository:
         raise Exception("Github Repository required")
 
+    github = GitHub(
+        repository=arguments.github_repository,
+        instance=arguments.github_instance,
+        token=arguments.github_token,
+    )
+
     if arguments.list_severities:
         for severity in SEVERITIES:
             Octokit.info(" -> {}".format(severity))
 
         exit(0)
-
-    if arguments.debug:
-        os.makedirs("results", exist_ok=True)
 
     policy_location = None
 
@@ -128,171 +130,22 @@ if __name__ == "__main__":
 
     Octokit.endGroup()
 
-    # Total errors
+    checks = Checks(github, policy)
+
     errors = 0
 
     if not arguments.disable_code_scanning:
-        # Code Scanning results
-        Octokit.createGroup("Code Scanning Results")
-        code_scanning_errors = 0
-
-        codescanning = CodeScanning(
-            arguments.github_repository, token=arguments.github_token
-        )
-
-        alerts = codescanning.getOpenAlerts(params={"ref": arguments.github_ref})
-        Octokit.info("Total Code Scanning Alerts :: " + str(len(alerts)))
-
-        if arguments.debug:
-            with open("results/code-scanning.json", "w") as handle:
-                json.dump(alerts, handle, indent=2)
-
-        for alert in alerts:
-            severity = alert.get("rule", {}).get("severity")
-
-            rule_name = alert.get("rule", {}).get("description")
-            rule_id = alert.get("rule", {}).get("id")
-
-            if policy.checkViolation(
-                severity, "codescanning", name=rule_name, id=rule_id
-            ):
-                if arguments.display:
-                    location = alert.get("most_recent_instance", {}).get("location", {})
-                    Octokit.error(
-                        alert.get("tool", {}).get("name") + " - " + rule_name,
-                        file=location.get("path"),
-                        line=location.get("start_line"),
-                        col=location.get("start_column"),
-                    )
-
-                code_scanning_errors += 1
-
-        Octokit.info("Code Scanning violations :: " + str(code_scanning_errors))
-        errors += code_scanning_errors
-
-        Octokit.endGroup()
+        errors += checks.checkCodeScanning()
 
     if not arguments.disable_dependabot:
-        Octokit.createGroup("Dependabot Results")
-
-        dependabot_errors = 0
-
-        dependabot = Dependabot(
-            arguments.github_repository, token=arguments.github_token
-        )
-
-        try:
-            alerts = dependabot.getOpenAlerts()
-            Octokit.info("Total Dependabot Alerts :: " + str(len(alerts)))
-
-            if arguments.debug:
-                with open("results/dependabot.json", "w") as handle:
-                    json.dump(alerts, handle, indent=2)
-
-            for alert in alerts:
-                package = alert.get("securityVulnerability", {}).get("package", {})
-
-                if alert.get("dismissReason") is not None:
-                    Octokit.debug(
-                        "Skipping Dependabot alert :: {}={} - {} ".format(
-                            package.get("ecosystem", "N/A"),
-                            package.get("name", "N/A"),
-                            alert.get("dismissReason"),
-                        )
-                    )
-                    continue
-
-                severity = alert.get("securityAdvisory", {}).get("severity").lower()
-
-                alert_id = alert.get("securityAdvisory", {}).get("ghsaId").lower()
-                # Alert name support?
-
-                if policy.checkViolation(severity, "dependabot", id=alert_id):
-                    if arguments.display:
-                        Octokit.error(
-                            "Dependabot Alert :: {}={}".format(
-                                package.get("ecosystem", "N/A"),
-                                package.get("name", "N/A"),
-                            )
-                        )
-
-                    dependabot_errors += 1
-
-        except Exception as err:
-            Octokit.error(str(err))
-
-        Octokit.info("Dependabot violations :: " + str(dependabot_errors))
-        errors += dependabot_errors
-
-        Octokit.endGroup()
+        errors += checks.checkDependabot()
 
     # Dependabot Licensing
-    if not arguments.disable_dependabot_licensing:
-        Octokit.createGroup("Dependency Graph Results - Lisencing")
-
-        licensing_errors = 0
-
-        dependabot = Dependabot(
-            arguments.github_repository, token=arguments.github_token
-        )
-
-        try:
-            alerts = dependabot.getLicenseInfo()
-            Octokit.info("Total Dependency Graph Dependencies :: " + str(len(alerts)))
-
-            for dependency in alerts:
-                Octokit.debug(" > {name} ({manager}) - {lisence}".format(**dependency))
-
-                if policy.checkLisencingViolation(dependency.get("lisence")):
-                    if arguments.display:
-                        Octokit.error(
-                            "Dependency Graph Alert :: {name} ({manager}) = {lisence}".format(
-                                **dependency
-                            )
-                        )
-
-                    licensing_errors += 1
-
-            if arguments.debug:
-                with open("results/lisencing.json", "w") as handle:
-                    json.dump(alerts, handle, indent=2)
-
-        except Exception as err:
-            Octokit.error(str(err))
-
-        Octokit.info("Dependency Graph violations :: " + str(licensing_errors))
-
-        Octokit.endGroup()
+    if not arguments.disable_dependency_licensing:
+        errors += checks.checkDependencyLicensing()
 
     if not arguments.disable_secret_scanning:
-        # Secret Scanning Results
-        Octokit.createGroup("Secret Scanning Results")
-
-        secretscanning = SecretScanning(
-            arguments.github_repository, token=arguments.github_token
-        )
-
-        try:
-            alerts = secretscanning.getOpenAlerts()
-            Octokit.info("Total Secret Scanning Alerts :: " + str(len(alerts)))
-
-            if arguments.debug:
-                with open("results/secretscanning.json", "w") as handle:
-                    json.dump(alerts, handle, indent=2)
-
-            for alert in alerts:
-                if policy.checkViolation("critical", "secretscanning"):
-                    if arguments.display:
-                        Octokit.info(
-                            "Unresolved Secret - {secret_type}".format(**alert)
-                        )
-
-                errors += 1
-
-        except Exception as err:
-            Octokit.error(str(err))
-
-        Octokit.endGroup()
+        errors += checks.checkSecretScanning()
 
     Octokit.info("Total unacceptable alerts :: " + str(errors))
 
