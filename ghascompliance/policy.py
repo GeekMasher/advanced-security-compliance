@@ -275,16 +275,16 @@ class Policy:
 
         return severity in severities
 
-    def checkLisencingViolation(self, license, dependency={}):
+    def checkLicensingViolation(self, license, dependency={}):
         license = license.lower()
 
         # Policy as Code
         if self.policy and self.policy.get("licensing"):
-            return self.checkLisencingViolationAgainstPolicy(license, dependency)
+            return self.checkLicensingViolationAgainstPolicy(license, dependency)
 
         return license in [l.lower() for l in LICENSES]
 
-    def checkLisencingViolationAgainstPolicy(self, license, dependency={}):
+    def checkLicensingViolationAgainstPolicy(self, license, dependency={}):
         policy = self.policy.get("licensing")
         license = license.lower()
 
@@ -301,7 +301,7 @@ class Policy:
             dependency_name in warning_names or dependency_full in warning_names
         ):
             Octokit.warning(
-                "Dependency License Warning :: {manager}/{name} = {lisence}".format(
+                "Dependency License Warning :: {manager}/{name} = {license}".format(
                     **dependency
                 )
             )

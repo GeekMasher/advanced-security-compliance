@@ -56,10 +56,10 @@ class TestPolicyLoading(unittest.TestCase):
         ids = policy.policy.get("licensing", {}).get("conditions", {}).get("ids")
         self.assertEqual(ids, ["*-Examples", "MyLicencing-*"])
 
-        self.assertFalse(policy.checkLisencingViolation("MyLicencing"))
-        self.assertTrue(policy.checkLisencingViolation("MyLicencing-1.0"))
+        self.assertFalse(policy.checkLicensingViolation("MyLicencing"))
+        self.assertTrue(policy.checkLicensingViolation("MyLicencing-1.0"))
 
-        self.assertTrue(policy.checkLisencingViolation("Test-Examples"))
+        self.assertTrue(policy.checkLicensingViolation("Test-Examples"))
 
 
 class TestDefaultPolicyWildcards(unittest.TestCase):
@@ -73,8 +73,8 @@ class TestDefaultPolicyWildcards(unittest.TestCase):
         self.assertEqual(ids, ["GPL-*", "LGPL-*"])
 
     def testGPLVariants(self):
-        self.assertTrue(self.policy.checkLisencingViolation("GPL-2.0"))
-        self.assertTrue(self.policy.checkLisencingViolation("GPL-3.0"))
-        self.assertTrue(self.policy.checkLisencingViolation("LGPL-2.0"))
-        self.assertTrue(self.policy.checkLisencingViolation("LGPL-3.0"))
-        self.assertTrue(self.policy.checkLisencingViolation("LGPL-3.0 License"))
+        self.assertTrue(self.policy.checkLicensingViolation("GPL-2.0"))
+        self.assertTrue(self.policy.checkLicensingViolation("GPL-3.0"))
+        self.assertTrue(self.policy.checkLicensingViolation("LGPL-2.0"))
+        self.assertTrue(self.policy.checkLicensingViolation("LGPL-3.0"))
+        self.assertTrue(self.policy.checkLicensingViolation("LGPL-3.0 License"))

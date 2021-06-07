@@ -21,7 +21,7 @@ class TestPolicies(unittest.TestCase):
     def testLicenseByName(self):
         mygpl = self.samples.get("mygpl")
 
-        self.assertTrue(self.policy.checkLisencingViolation(mygpl["license"], mygpl))
+        self.assertTrue(self.policy.checkLicensingViolation(mygpl["license"], mygpl))
 
     def testLicenseByDepLicense(self):
         faker = self.samples.get("faker")
@@ -36,7 +36,7 @@ class TestPolicies(unittest.TestCase):
         )
 
         self.assertTrue(
-            self.policy.checkLisencingViolationAgainstPolicy(faker["license"], faker)
+            self.policy.checkLicensingViolationAgainstPolicy(faker["license"], faker)
         )
 
     def testLicenseByDepName(self):
@@ -52,5 +52,5 @@ class TestPolicies(unittest.TestCase):
         )
 
         self.assertTrue(
-            self.policy.checkLisencingViolationAgainstPolicy(faker["license"], faker)
+            self.policy.checkLicensingViolationAgainstPolicy(faker["license"], faker)
         )

@@ -54,7 +54,7 @@ thresholds.add_argument("--count", type=int, default=-1)
 
 
 if __name__ == "__main__":
-    # print(__banner__)
+    print(__banner__)
     arguments = parser.parse_args()
 
     logging.basicConfig(
@@ -131,7 +131,7 @@ if __name__ == "__main__":
 
     Octokit.endGroup()
 
-    checks = Checks(github, policy)
+    checks = Checks(github, policy, debugging=arguments.debug)
 
     errors = 0
 
@@ -142,7 +142,7 @@ if __name__ == "__main__":
         if not arguments.disable_dependabot:
             errors += checks.checkDependabot()
 
-        # Dependabot Licensing
+        # Dependency Graph Licensing
         if not arguments.disable_dependency_licensing:
             errors += checks.checkDependencyLicensing()
 
