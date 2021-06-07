@@ -1,0 +1,6 @@
+
+licensing:
+  conditions:
+    ids:
+      - '*-Examples'
+      - 'MyLicencing-*'

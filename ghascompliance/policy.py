@@ -1,6 +1,7 @@
 import os
 import yaml
 import shutil
+import fnmatch
 import tempfile
 import subprocess
 from urllib.parse import urlparse
@@ -19,7 +20,7 @@ class Policy:
 
     def __init__(
         self,
-        severity=None,
+        severity="error",
         repository=None,
         token=None,
         path=None,
@@ -189,6 +190,8 @@ class Policy:
         return results
 
     def _buildSeverityList(self, severity):
+        if not severity:
+            raise Exception("`security` is set to None/Null")
         severity = severity.lower()
         if severity == "none":
             Octokit.debug("No Unacceptable Severities")
@@ -200,6 +203,14 @@ class Policy:
             severities = SEVERITIES[: SEVERITIES.index(severity) + 1]
             Octokit.debug("Unacceptable Severities :: " + ",".join(severities))
         return severities
+
+    def matchContent(self, name: str, validators: list):
+        # Wildcard matching
+        for validator in validators:
+            results = fnmatch.filter([name], validator)
+            if results:
+                return True
+        return False
 
     def checkViolation(self, severity, technology=None, name=None, id=None):
         severity = severity.lower()
@@ -230,9 +241,9 @@ class Policy:
                     ingores_names = [
                         ign.lower() for ign in policy.get("ignores", {}).get("name", [])
                     ]
-                    if check_name in ingores_names:
+                    if self.matchContent(check_name, ingores_names):
                         return False
-                    elif check_name in condition_names:
+                    elif self.matchContent(check_name, condition_names):
                         return True
 
                 if id:
@@ -244,9 +255,9 @@ class Policy:
                     ingores_ids = [
                         ign.lower() for ign in policy.get("ignores", {}).get("id", [])
                     ]
-                    if check_id in ingores_ids:
+                    if self.matchContent(check_id, ingores_ids):
                         return False
-                    elif check_id in condition_ids:
+                    elif self.matchContent(check_id, condition_ids):
                         return True
 
                 level = self.policy.get(technology, {}).get("level")
@@ -286,7 +297,7 @@ class Policy:
             wrn.lower() for wrn in policy.get("warnings", {}).get("names", [])
         ]
 
-        if license in warning_ids or (
+        if self.matchContent(license, warning_ids) or (
             dependency_name in warning_names or dependency_full in warning_names
         ):
             Octokit.warning(
@@ -307,12 +318,12 @@ class Policy:
             ign.lower() for ign in policy.get("conditions", {}).get("names", [])
         ]
 
-        if license in ingore_ids or (
+        if self.matchContent(license, ingore_ids) or (
             dependency_name in ingore_names or dependency_full in ingore_names
         ):
             return False
 
-        elif license in condition_ids or (
+        elif self.matchContent(license, condition_ids) or (
             dependency_name in conditions_names or dependency_full in conditions_names
         ):
             return True

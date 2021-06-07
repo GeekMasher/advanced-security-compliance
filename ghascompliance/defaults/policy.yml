@@ -9,8 +9,8 @@ dependabot:
 licensing:
   conditions:
     ids:
-      - GPL-2.0
-      - GPL-3.0
+      - GPL-*
+      - LGPL-*
   warnings:
     ids:
       - Other

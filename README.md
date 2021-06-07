@@ -150,6 +150,19 @@ codescanning:
 ```
 
 
+#### Wildcards
+
+For both types of criteria matching you can use wildcards to easily match requirements in a quicker way.
+The matching is done using a Unix shell-style wildcards module called [fnmatch](https://docs.python.org/3/library/fnmatch.html) which supports `*` for matching everything.
+
+```yaml
+codescanning:
+  conditions:
+    ids:
+      - '*/sql-injection'
+```
+
+
 ##### Data Importing
 
 Some things to consider when using imports:
