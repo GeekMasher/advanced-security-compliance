@@ -60,3 +60,21 @@ class TestPolicyLoading(unittest.TestCase):
         self.assertTrue(policy.checkLisencingViolation("MyLicencing-1.0"))
 
         self.assertTrue(policy.checkLisencingViolation("Test-Examples"))
+
+
+class TestDefaultPolicyWildcards(unittest.TestCase):
+    def setUp(self):
+        self.policy = Policy(path="ghascompliance/defaults/policy.yml")
+
+        return super().setUp()
+
+    def testDefault(self):
+        ids = self.policy.policy.get("licensing", {}).get("conditions", {}).get("ids")
+        self.assertEqual(ids, ["GPL-*", "LGPL-*"])
+
+    def testGPLVariants(self):
+        self.assertTrue(self.policy.checkLisencingViolation("GPL-2.0"))
+        self.assertTrue(self.policy.checkLisencingViolation("GPL-3.0"))
+        self.assertTrue(self.policy.checkLisencingViolation("LGPL-2.0"))
+        self.assertTrue(self.policy.checkLisencingViolation("LGPL-3.0"))
+        self.assertTrue(self.policy.checkLisencingViolation("LGPL-3.0 License"))
