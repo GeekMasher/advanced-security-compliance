@@ -143,21 +143,21 @@ class Dependabot(OctoRequests):
                 dependency_name = dependency.get("packageName", "NA")
                 dependency_repo = dependency.get("repository")
 
-                dependency_lisence = (
+                dependency_license = (
                     dependency_repo.get("licenseInfo") if dependency_repo else {}
                 )
 
-                dependency_lisence_name = (
-                    dependency_lisence.get("name", "NA") if dependency_lisence else "NA"
+                dependency_license_name = (
+                    dependency_license.get("name", "NA") if dependency_license else "NA"
                 )
 
-                Octokit.debug(f" > {dependency_name} == {dependency_lisence_name}")
+                Octokit.debug(f" > {dependency_name} == {dependency_license_name}")
 
                 results.append(
                     {
                         "name": dependency_name,
                         "manager": dependency_manager,
-                        "lisence": dependency_lisence_name,
+                        "license": dependency_license_name,
                     }
                 )
 

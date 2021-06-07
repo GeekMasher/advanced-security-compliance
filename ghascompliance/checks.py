@@ -123,7 +123,7 @@ class Checks:
         return dependabot_errors
 
     def checkDependencyLicensing(self):
-        Octokit.createGroup("Dependency Graph Results - Lisencing")
+        Octokit.createGroup("Dependency Graph Results - Licensing")
 
         licensing_errors = 0
 
@@ -135,14 +135,14 @@ class Checks:
         self.writeResults("licensing", alerts)
 
         for dependency in alerts:
-            Octokit.debug(" > {name} ({manager}) - {lisence}".format(**dependency))
+            Octokit.debug(" > {name} ({manager}) - {license}".format(**dependency))
 
-            if self.policy.checkLisencingViolation(
-                dependency.get("lisence"), dependency
+            if self.policy.checkLicensingViolation(
+                dependency.get("license"), dependency
             ):
                 if self.display:
                     Octokit.error(
-                        "Dependency Graph Alert :: {name} ({manager}) = {lisence}".format(
+                        "Dependency Graph Alert :: {name} ({manager}) = {license}".format(
                             **dependency
                         )
                     )
