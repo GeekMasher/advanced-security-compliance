@@ -2,6 +2,7 @@ import os
 import yaml
 import shutil
 import fnmatch
+import datetime
 import tempfile
 import subprocess
 from urllib.parse import urlparse
@@ -14,8 +15,8 @@ __SCHEMA_VALIDATION__ = "Schema Validation Failed :: {msg} - {value}"
 
 class Policy:
 
-    __BLOCK_ITEMS__ = ["ids", "names", "imports"]
-    __SECTION_ITEMS__ = ["level", "conditions", "warnings", "ignores"]
+    __BLOCK_ITEMS__ = ["ids", "names", "imports", "remediate"]
+    __SECTION_ITEMS__ = ["level", "remediate", "conditions", "warnings", "ignores"]
     __IMPORT_ALLOWED_TYPES__ = ["txt"]
 
     def __init__(
@@ -32,6 +33,7 @@ class Policy:
         self.severities = self._buildSeverityList(severity)
 
         self.policy = None
+        self.remediate = None
 
         self.instance = instance
         self.token = token
@@ -84,10 +86,22 @@ class Policy:
         with open(path, "r") as handle:
             policy = yaml.safe_load(handle)
 
-        # set 'general' to the current minimum
-        if not policy.get("general", {}).get("level"):
+        self.loadPolicy(policy)
+
+    def loadPolicy(self, policy: dict):
+
+        if not policy.get("general"):
             policy["general"] = {}
+
+        general = policy.get("general")
+
+        # set 'general' to the current minimum
+        if not general.get("level"):
             policy["general"]["level"] = self.risk_level.lower()
+
+        if general.get("remediate"):
+            self.remediate = general.get("remediate")
+            policy["general"]["remediate"] = self.remediate
 
         for tech in TECHNOLOGIES:
             # Importing files
@@ -100,6 +114,9 @@ class Policy:
         self.policy = policy
 
     def loadPolicySection(self, name: str, data: dict):
+
+        time_to_remediate_policy = False
+
         for section, section_data in data.items():
             # check if only certain sections are present
             if section not in Policy.__SECTION_ITEMS__:
@@ -111,6 +128,12 @@ class Policy:
 
             # Skip level
             if section == "level" and isinstance(section_data, str):
+                continue
+
+            # Time to Remediate
+            if section == "remediate":
+                Octokit.debug("Enabling Time to Remediate (section) :: " + name)
+                time_to_remediate_policy = True
                 continue
 
             # Validate blocks
@@ -143,6 +166,10 @@ class Policy:
                             )
                         else:
                             section_data[block] = self.loadPolicyImport(import_path)
+
+        if not time_to_remediate_policy and self.remediate:
+            Octokit.info("Enabling Time to Remediate (global) :: " + name)
+            data["remediate"] = self.remediate
 
         return data
 
@@ -189,19 +216,24 @@ class Policy:
                 break
         return results
 
-    def _buildSeverityList(self, severity):
+    def _buildSeverityList(self, severity: str):
         if not severity:
             raise Exception("`security` is set to None/Null")
+
         severity = severity.lower()
+        severities = []
+
         if severity == "none":
             Octokit.debug("No Unacceptable Severities")
             return []
         elif severity == "all":
             Octokit.debug("Unacceptable Severities :: " + ",".join(SEVERITIES))
             return SEVERITIES
-        else:
+        elif severity in SEVERITIES:
             severities = SEVERITIES[: SEVERITIES.index(severity) + 1]
             Octokit.debug("Unacceptable Severities :: " + ",".join(severities))
+        else:
+            Octokit.warning(f"Unknown severity provided :: {severity}")
         return severities
 
     def matchContent(self, name: str, validators: list):
@@ -212,10 +244,61 @@ class Policy:
                 return True
         return False
 
-    def checkViolation(self, severity, technology=None, name=None, id=None):
+    def checkViolationRemediation(
+        self,
+        severity: str,
+        remediate: dict,
+        creation_time: datetime.datetime,
+    ):
+        # Midnight "today"
+        now = datetime.datetime.now().date()
+
+        if remediate.get(severity):
+            alert_datetime = creation_time + datetime.timedelta(
+                days=int(remediate.get(severity))
+            )
+            if now > alert_datetime.date():
+                return True
+
+        else:
+            for remediate_severity, remediate_delta in remediate.items():
+                remediate_severity_list = self._buildSeverityList(remediate_severity)
+
+                if severity in remediate_severity_list:
+                    alert_datetime = creation_time + datetime.timedelta(
+                        days=int(remediate_delta)
+                    )
+                    if now > alert_datetime.date():
+                        return True
+
+        return False
+
+    def checkViolation(
+        self,
+        severity: str,
+        technology: str = None,
+        name: str = None,
+        id: str = None,
+        creation_time: datetime.datetime = None,
+    ):
         severity = severity.lower()
 
-        if self.policy:
+        if self.policy.get(technology, {}).get("remediate"):
+            Octokit.debug("Checking violation against remediate configuration")
+
+            remediate_policy = self.policy.get(technology, {}).get("remediate")
+
+            violation_remediation = self.checkViolationRemediation(
+                severity, remediate_policy, creation_time
+            )
+            if self.policy.get(technology, {}).get("level"):
+                return violation_remediation and self.checkViolationAgainstPolicy(
+                    severity, technology, name=name, id=id
+                )
+            else:
+                return violation_remediation
+
+        elif self.policy:
             return self.checkViolationAgainstPolicy(
                 severity, technology, name=name, id=id
             )
@@ -260,10 +343,15 @@ class Policy:
                     elif self.matchContent(check_id, condition_ids):
                         return True
 
-                level = self.policy.get(technology, {}).get("level")
+                # If level isn't present, `all` is set
+                level = self.policy.get(technology, {}).get(
+                    "level", self.policy.get(technology, {}).get("level", "all")
+                )
                 severities = self._buildSeverityList(level)
             else:
-                level = self.policy.get(technology, {}).get("level")
+                level = self.policy.get(technology, {}).get(
+                    "level", self.policy.get(technology, {}).get("level", "all")
+                )
                 severities = self._buildSeverityList(level)
         else:
             severities = self.severities

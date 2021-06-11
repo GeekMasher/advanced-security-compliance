@@ -1,0 +1,38 @@
+
+general:
+  # All other blocks will be inheriting the remediate section if they don't have 
+  #  their own defined.
+  remediate:
+    # Only `errors` and above have got 1 days to remediate according to the 
+    #  policy
+    errors: 1
+    warnings: 30
+    # Any / All issues that haven't been defined by other catagories will have 
+    #  the following remediation policy applied. 
+    all: 90
+
+
+codescanning:
+  level: error
+  conditions:
+    ids:
+      - "*/sql-injection"
+
+dependabot:
+  level: high
+  # This block will not inherit the `general` remediate block
+  remediate:
+    # The team have 7 days before this starts crashing workflows / builds
+    high: 7
+
+licensing:
+  conditions:
+    ids:
+      - GPL-2.0
+  warnings:
+    ids:
+      - Other
+      - NA
+
+secretscanning:
+  level: all
