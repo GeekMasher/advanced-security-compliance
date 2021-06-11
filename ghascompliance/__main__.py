@@ -131,7 +131,9 @@ if __name__ == "__main__":
 
     Octokit.endGroup()
 
-    checks = Checks(github, policy, debugging=arguments.debug)
+    checks = Checks(
+        github, policy, display=arguments.display, debugging=arguments.debug
+    )
 
     errors = 0
 
