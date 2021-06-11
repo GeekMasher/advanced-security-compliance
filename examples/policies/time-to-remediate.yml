@@ -26,6 +26,8 @@ dependabot:
     high: 7
 
 licensing:
+  # Licensing does not have `remediate` block as there are no dates associated 
+  #  with the discovery of a dependency with licensing issues.
   conditions:
     ids:
       - GPL-2.0
