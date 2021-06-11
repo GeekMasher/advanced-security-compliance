@@ -14,6 +14,7 @@ general:
 
 codescanning:
   level: error
+  # the codescanning block will inherit the general block
   conditions:
     ids:
       - "*/sql-injection"
@@ -38,3 +39,7 @@ licensing:
 
 secretscanning:
   level: all
+  remediate:
+    # All secrets by default are set to 'critical' severity so only `critical` 
+    #  or `all` will work
+    critical: 7
