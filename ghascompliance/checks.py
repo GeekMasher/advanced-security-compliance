@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 import json
 
@@ -55,13 +56,28 @@ class Checks:
             rule_name = alert.get("rule", {}).get("description")
             rule_id = alert.get("rule", {}).get("id")
 
+            alert_creation_time = datetime.strptime(
+                alert.get("created_at"), "%Y-%m-%dT%XZ"
+            )
+
             if self.policy.checkViolation(
-                severity, "codescanning", name=rule_name, id=rule_id
+                severity,
+                "codescanning",
+                name=rule_name,
+                id=rule_id,
+                creation_time=alert_creation_time,
             ):
                 if self.display:
+                    error_format = "{tool_name} - {creation_time} - {rule_name}"
+
                     location = alert.get("most_recent_instance", {}).get("location", {})
+
                     Octokit.error(
-                        alert.get("tool", {}).get("name") + " - " + rule_name,
+                        error_format.format(
+                            tool_name=alert.get("tool", {}).get("name"),
+                            rule_name=rule_name,
+                            creation_time=alert_creation_time,
+                        ),
                         file=location.get("path"),
                         line=location.get("start_line"),
                         col=location.get("start_column"),
@@ -69,7 +85,8 @@ class Checks:
 
                 code_scanning_errors += 1
 
-        Octokit.info("Code Scanning violations :: " + str(code_scanning_errors))
+        alerts_message = "Code Scanning violations :: {count}"
+        Octokit.info(alerts_message.format(count=code_scanning_errors))
 
         Octokit.endGroup()
 
@@ -102,10 +119,16 @@ class Checks:
 
             severity = alert.get("securityAdvisory", {}).get("severity").lower()
 
+            alert_creation_time = datetime.strptime(
+                alert.get("createdAt"), "%Y-%m-%dT%XZ"
+            )
+
             alert_id = alert.get("securityAdvisory", {}).get("ghsaId").lower()
             # Alert name support?
 
-            if self.policy.checkViolation(severity, "dependabot", id=alert_id):
+            if self.policy.checkViolation(
+                severity, "dependabot", id=alert_id, creation_time=alert_creation_time
+            ):
                 if self.display:
                     Octokit.error(
                         "Dependabot Alert :: {}={}".format(
@@ -169,7 +192,14 @@ class Checks:
         self.writeResults("secretscanning", alerts)
 
         for alert in alerts:
-            if self.policy.checkViolation("critical", "secretscanning"):
+
+            alert_creation_time = datetime.strptime(
+                alert.get("created_at"), "%Y-%m-%dT%XZ"
+            )
+
+            if self.policy.checkViolation(
+                "critical", "secretscanning", creation_time=alert_creation_time
+            ):
                 if self.display:
                     Octokit.info("Unresolved Secret - {secret_type}".format(**alert))
 
@@ -180,3 +210,6 @@ class Checks:
         Octokit.endGroup()
 
         return secrets_errors
+
+    def isRemediationPolicy(self, technology: str = "general") -> bool:
+        return self.policy.policy.get(technology, {}).get("remediate") is not None
