@@ -287,12 +287,15 @@ class Policy:
     def checkViolation(
         self,
         severity: str,
-        technology: str = None,
+        technology: str,
         names: List[str] = [],
         ids: List[str] = [],
         creation_time: datetime.datetime = None,
     ):
         severity = severity.lower()
+
+        if not technology or technology == "":
+            raise Exception("Technology is set to None")
 
         if self.policy.get(technology, {}).get("remediate"):
             Octokit.debug("Checking violation against remediate configuration")

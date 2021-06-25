@@ -85,7 +85,7 @@ class Checks:
 
             if self.policy.checkViolation(
                 severity,
-                "codescanning",
+                technology="codescanning",
                 names=names,
                 ids=ids,
                 creation_time=alert_creation_time,
