@@ -22,11 +22,7 @@ licensing:
       - NA
 
 # General Dependency Alerts
-dependencies:
-  conditions:
-    imports:
-      # Import text list of Typosquatting dependencies
-      names: ghascompliance/defaults/typosquatting.txt
+# dependencies:
   # warnings:
   #   ids:
   #     - Maintenance

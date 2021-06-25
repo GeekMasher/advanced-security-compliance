@@ -111,12 +111,13 @@ class Octokit:
         logging.error(msg)
 
         if Octokit.__EVENT__:
-            print("::error ::{msg}".format(msg=msg))
+            print("::error ::{msg}".format(msg=msg), flush=True)
         elif file:
             print(
                 "::error file={file},line={line},col={col}::{msg}".format(
                     msg=msg, file=file, line=line, col=col
-                )
+                ),
+                flush=True,
             )
         else:
             print("[!] {msg}".format(msg=msg))

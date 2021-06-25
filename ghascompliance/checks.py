@@ -1,7 +1,7 @@
 import os
 import json
 from datetime import datetime
-from collections.abc import Callable
+from typing import Callable, List
 
 from ghascompliance.policy import Policy
 from ghascompliance.octokit import Octokit, GitHub
@@ -43,7 +43,7 @@ class Checks:
             self.writeResults(name, results, file_type=file_type)
             return results
 
-    def writeResults(self, name, results, file_type="json"):
+    def writeResults(self, name: str, results: str, file_type: str = "json"):
         path = os.path.join(self.results, name + "." + file_type)
         if not self.debugging:
             Octokit.debug("Skipping writing results to disk")
@@ -85,7 +85,7 @@ class Checks:
 
             if self.policy.checkViolation(
                 severity,
-                "codescanning",
+                technology="codescanning",
                 names=names,
                 ids=ids,
                 creation_time=alert_creation_time,
@@ -260,7 +260,8 @@ class Checks:
             # manager + name + version
             names.append(dependency.get("full_name"))
 
-            if self.policy.checkViolation("all", "dependencies", names=names, ids=ids):
+            #  none is set to just check if the name or pattern is discovered
+            if self.policy.checkViolation("none", "dependencies", names=names, ids=ids):
                 if self.display:
                     Octokit.error(
                         "Dependency Graph Alert :: {}".format(

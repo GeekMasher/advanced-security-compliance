@@ -6,6 +6,7 @@ import fnmatch
 import datetime
 import tempfile
 import subprocess
+from typing import List
 from urllib.parse import urlparse
 from ghascompliance.consts import SEVERITIES, TECHNOLOGIES, LICENSES
 from ghascompliance.octokit import Octokit
@@ -33,7 +34,7 @@ class Policy:
 
         self.severities = self._buildSeverityList(severity)
 
-        self.policy = None
+        self.policy = {}
         self.remediate = None
 
         self.instance = instance
@@ -174,7 +175,7 @@ class Policy:
 
         return data
 
-    def loadPolicyImport(self, path):
+    def loadPolicyImport(self, path: str):
         results = []
         traversal = False
         paths = [
@@ -246,7 +247,7 @@ class Policy:
             Octokit.warning(f"Unknown severity provided :: {severity}")
         return severities
 
-    def matchContent(self, name: str, validators: list):
+    def matchContent(self, name: str, validators: List[str]):
         # Wildcard matching
         for validator in validators:
             results = fnmatch.filter([name], validator)
@@ -286,12 +287,15 @@ class Policy:
     def checkViolation(
         self,
         severity: str,
-        technology: str = None,
-        names: list[str] = [],
-        ids: list[str] = [],
+        technology: str,
+        names: List[str] = [],
+        ids: List[str] = [],
         creation_time: datetime.datetime = None,
     ):
         severity = severity.lower()
+
+        if not technology or technology == "":
+            raise Exception("Technology is set to None")
 
         if self.policy.get(technology, {}).get("remediate"):
             Octokit.debug("Checking violation against remediate configuration")
@@ -313,13 +317,17 @@ class Policy:
                 severity, technology, names=names, ids=ids
             )
         else:
-            if severity not in SEVERITIES:
+            if severity == "none":
+                return False
+            elif severity == "all":
+                return True
+            elif severity not in SEVERITIES:
                 Octokit.warning(f"Unknown Severity used - {severity}")
 
             return severity in self.severities
 
     def checkViolationAgainstPolicy(
-        self, severity: str, technology: str, names: list = [], ids: list = []
+        self, severity: str, technology: str, names: List[str] = [], ids: List[str] = []
     ):
         severities = []
         level = "all"
@@ -369,7 +377,7 @@ class Policy:
 
         return severity in severities
 
-    def checkLicensingViolation(self, license, dependency={}):
+    def checkLicensingViolation(self, license: str, dependency: dict = {}):
         license = license.lower()
 
         # Policy as Code
@@ -378,7 +386,7 @@ class Policy:
 
         return license in [l.lower() for l in LICENSES]
 
-    def checkLicensingViolationAgainstPolicy(self, license, dependency={}):
+    def checkLicensingViolationAgainstPolicy(self, license: str, dependency: dict = {}):
         policy = self.policy.get("licensing")
         license = license.lower()
 
