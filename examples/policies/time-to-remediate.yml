@@ -1,0 +1,47 @@
+
+general:
+  # All other blocks will be inheriting the remediate section if they don't have 
+  #  their own defined.
+  remediate:
+    # Only `errors` and above have got 7 days to remediate according to the 
+    #  policy
+    errors: 7
+    # Same here for anything regarding warnings but for 30 days
+    warnings: 30
+
+    # Any / All issues that haven't been defined by other catagories will have 
+    #  the following remediation policy applied. 
+    all: 90
+
+
+codescanning:
+  # If `level` is also set with `remediate` turned on then both the level check 
+  #  and time to remediate time frame checks are done. 
+  # In this example, if `level: error` is set and a warning is reported and 
+  #  violated the time to remediate check (has exceeded the time to fix the 
+  #  issue) then it will NOT be reported.
+  level: error
+
+  # the `codescanning` block will inherit the `general` block
+
+dependabot:
+  # This block will not inherit the `general` remediate block
+  remediate:
+    # The team have 7 days before this starts crashing workflows / builds
+    high: 7
+
+licensing:
+  # Licensing does not have `remediate` block as there are no dates associated 
+  #  with the discovery of a dependency with licensing issues. This may change 
+  #  in the future but currently isn't available.
+  warnings:
+    ids:
+      - Other
+      - NA
+
+secretscanning:
+  level: all
+  remediate:
+    # All secrets by default are set to 'critical' severity so only `critical` 
+    #  or `all` will work
+    critical: 7

@@ -163,6 +163,49 @@ codescanning:
 ```
 
 
+#### Time to Remediate
+
+The feature allows a user to define a time frame to which a security alert/vulnerability of a certain severity has before the alert triggered a violation in the Action.
+
+By default, if this section is not defined in any part of the policy then no checks are done.
+Existing policy files should act the same without the new section.
+
+
+```yaml
+general:
+  # All other blocks will be inheriting the remediate section if they don't have 
+  #  their own defined.
+  remediate:
+    # Only `error`'s and above have got 7 days to remediate according to the 
+    #  policy. Any time before that, nothing will occur and post the remediation 
+    #  time frame the alert will be raised. 
+    error: 7
+
+codescanning:
+  # the `codescanning` block will inherit the `general` block
+  # ...
+
+dependabot:
+  remediate:
+    # high and critical security issues
+    high: 7
+    # moderate security issues
+    moderate: 30
+    # all other security issues
+    all: 90
+
+secretscanning:
+  remediate:
+    # All secrets by default are set to 'critical' severity so only `critical` 
+    #  or `all` will work
+    critical: 7
+```
+
+##### Time to Remediate Examples
+
+- [Time to Remediate Example](examples/policies/time-to-remediate.yml)
+
+
 #### Data Importing
 
 Some things to consider when using imports:

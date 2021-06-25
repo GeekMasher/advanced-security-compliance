@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 import json
 from collections.abc import Callable
@@ -78,13 +79,24 @@ class Checks:
             #  Rule Name
             names.append(rule_name)
 
+            alert_creation_time = datetime.strptime(
+                alert.get("created_at"), "%Y-%m-%dT%XZ"
+            )
+
             if self.policy.checkViolation(
                 severity, "codescanning", names=names, ids=ids
             ):
                 if self.display:
+                    error_format = "{tool_name} - {creation_time} - {rule_name}"
+
                     location = alert.get("most_recent_instance", {}).get("location", {})
+
                     Octokit.error(
-                        alert.get("tool", {}).get("name") + " - " + rule_name,
+                        error_format.format(
+                            tool_name=alert.get("tool", {}).get("name"),
+                            rule_name=rule_name,
+                            creation_time=alert_creation_time,
+                        ),
                         file=location.get("path"),
                         line=location.get("start_line"),
                         col=location.get("start_column"),
@@ -92,7 +104,8 @@ class Checks:
 
                 code_scanning_errors += 1
 
-        Octokit.info("Code Scanning violations :: " + str(code_scanning_errors))
+        alerts_message = "Code Scanning violations :: {count}"
+        Octokit.info(alerts_message.format(count=code_scanning_errors))
 
         Octokit.endGroup()
 
@@ -297,3 +310,6 @@ class Checks:
         Octokit.endGroup()
 
         return secrets_errors
+
+    def isRemediationPolicy(self, technology: str = "general") -> bool:
+        return self.policy.policy.get(technology, {}).get("remediate") is not None

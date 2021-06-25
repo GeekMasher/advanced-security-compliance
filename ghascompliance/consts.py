@@ -3,10 +3,12 @@ SEVERITIES = [
     "critical",
     "high",
     "error",
+    "errors",
     "medium",
     "moderate",  # Dependabot
     "low",
     "warning",
+    "warnings",
     # Informational issues
     "notes",
 ]
