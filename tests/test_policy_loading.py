@@ -122,7 +122,11 @@ class TestPolicyExamples(unittest.TestCase):
         )
         self.assertEqual(
             policy.policy["licensing"]["conditions"]["names"],
-            ["tunnel-agent"],
+            [
+                "maven://org.apache.struts",
+                "org.apache.struts",
+                "maven://org.apache.struts#2.0.5",
+            ],
         )
 
         self.assertEqual(policy.policy["licensing"]["warnings"]["ids"], ["Other", "NA"])
