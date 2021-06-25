@@ -1,4 +1,5 @@
 import os
+import json
 import yaml
 import shutil
 import fnmatch
@@ -216,6 +217,15 @@ class Policy:
                 break
         return results
 
+    def savePolicy(self, path: str):
+        #  Always clear the file
+        Octokit.info("Saving Policy...")
+        if os.path.exists(path):
+            os.remove(path)
+        with open(path, "w") as handle:
+            json.dump(self.policy, handle, indent=2)
+        Octokit.info("Policy saved")
+
     def _buildSeverityList(self, severity: str):
         if not severity:
             raise Exception("`security` is set to None/Null")
@@ -253,7 +263,7 @@ class Policy:
         # Midnight "today"
         now = datetime.datetime.now().date()
 
-        if remediate.get(severity):
+        if creation_time and remediate.get(severity):
             alert_datetime = creation_time + datetime.timedelta(
                 days=int(remediate.get(severity))
             )
@@ -277,8 +287,8 @@ class Policy:
         self,
         severity: str,
         technology: str = None,
-        name: str = None,
-        id: str = None,
+        names: list[str] = [],
+        ids: list[str] = [],
         creation_time: datetime.datetime = None,
     ):
         severity = severity.lower()
@@ -293,14 +303,14 @@ class Policy:
             )
             if self.policy.get(technology, {}).get("level"):
                 return violation_remediation and self.checkViolationAgainstPolicy(
-                    severity, technology, name=name, id=id
+                    severity, technology, names=names, ids=ids
                 )
             else:
                 return violation_remediation
 
         elif self.policy:
             return self.checkViolationAgainstPolicy(
-                severity, technology, name=name, id=id
+                severity, technology, names=names, ids=ids
             )
         else:
             if severity not in SEVERITIES:
@@ -308,50 +318,46 @@ class Policy:
 
             return severity in self.severities
 
-    def checkViolationAgainstPolicy(self, severity, technology, name=None, id=None):
+    def checkViolationAgainstPolicy(
+        self, severity: str, technology: str, names: list = [], ids: list = []
+    ):
         severities = []
         level = "all"
 
         if technology:
             policy = self.policy.get(technology)
             if policy:
-                if name:
+                for name in names:
                     check_name = str(name).lower()
                     condition_names = [
                         ign.lower()
-                        for ign in policy.get("conditions", {}).get("name", [])
+                        for ign in policy.get("conditions", {}).get("names", [])
                     ]
                     ingores_names = [
-                        ign.lower() for ign in policy.get("ignores", {}).get("name", [])
+                        ign.lower()
+                        for ign in policy.get("ignores", {}).get("names", [])
                     ]
                     if self.matchContent(check_name, ingores_names):
                         return False
                     elif self.matchContent(check_name, condition_names):
                         return True
 
-                if id:
+                for id in ids:
                     check_id = str(id).lower()
                     condition_ids = [
                         ign.lower()
-                        for ign in policy.get("conditions", {}).get("id", [])
+                        for ign in policy.get("conditions", {}).get("ids", [])
                     ]
                     ingores_ids = [
-                        ign.lower() for ign in policy.get("ignores", {}).get("id", [])
+                        ign.lower() for ign in policy.get("ignores", {}).get("ids", [])
                     ]
                     if self.matchContent(check_id, ingores_ids):
                         return False
                     elif self.matchContent(check_id, condition_ids):
                         return True
 
-                # If level isn't present, `all` is set
-                level = self.policy.get(technology, {}).get(
-                    "level", self.policy.get(technology, {}).get("level", "all")
-                )
-                severities = self._buildSeverityList(level)
-            else:
-                level = self.policy.get(technology, {}).get(
-                    "level", self.policy.get(technology, {}).get("level", "all")
-                )
+            if self.policy.get(technology, {}).get("level"):
+                level = self.policy.get(technology, {}).get("level")
                 severities = self._buildSeverityList(level)
         else:
             severities = self.severities
@@ -376,22 +382,23 @@ class Policy:
         policy = self.policy.get("licensing")
         license = license.lower()
 
-        dependency_name = dependency.get("name")
-        dependency_manager = dependency.get("manager")
-        dependency_full = f"{dependency_manager}/{dependency_name}"
+        dependency_short_name = dependency.get("name", "NA")
+        dependency_name = (
+            dependency.get("manager", "NA") + "://" + dependency.get("name", "NA")
+        )
+        dependency_full = dependency.get("full_name", "NA://NA#NA")
 
         warning_ids = [wrn.lower() for wrn in policy.get("warnings", {}).get("ids", [])]
         warning_names = [
             wrn.lower() for wrn in policy.get("warnings", {}).get("names", [])
         ]
 
-        if self.matchContent(license, warning_ids) or (
-            dependency_name in warning_names or dependency_full in warning_names
+        #  If the license name is in the warnings list
+        if self.matchContent(license, warning_ids) or self.matchContent(
+            dependency_full, warning_names
         ):
             Octokit.warning(
-                "Dependency License Warning :: {manager}/{name} = {license}".format(
-                    **dependency
-                )
+                f"Dependency License Warning :: {dependency_full} = {license}"
             )
 
         ingore_ids = [ign.lower() for ign in policy.get("ingores", {}).get("ids", [])]
@@ -406,14 +413,16 @@ class Policy:
             ign.lower() for ign in policy.get("conditions", {}).get("names", [])
         ]
 
-        if self.matchContent(license, ingore_ids) or (
-            dependency_name in ingore_names or dependency_full in ingore_names
-        ):
-            return False
+        for value in [license, dependency_full, dependency_name, dependency_short_name]:
 
-        elif self.matchContent(license, condition_ids) or (
-            dependency_name in conditions_names or dependency_full in conditions_names
-        ):
-            return True
+            if self.matchContent(value, ingore_ids) or self.matchContent(
+                value, ingore_names
+            ):
+                return False
+
+            elif self.matchContent(value, condition_ids) or self.matchContent(
+                value, conditions_names
+            ):
+                return True
 
         return False

@@ -23,9 +23,11 @@ parser = argparse.ArgumentParser(tool_name)
 parser.add_argument(
     "--debug", action="store_true", default=bool(os.environ.get("DEBUG"))
 )
+parser.add_argument("--disable-caching", action="store_false")
 parser.add_argument("--disable-code-scanning", action="store_true")
 parser.add_argument("--disable-dependabot", action="store_true")
 parser.add_argument("--disable-dependency-licensing", action="store_true")
+parser.add_argument("--disable-dependencies", action="store_true")
 parser.add_argument("--disable-secret-scanning", action="store_true")
 
 github_arguments = parser.add_argument_group("GitHub")
@@ -112,6 +114,8 @@ if __name__ == "__main__":
                 "Policy config file set: {}".format(arguments.github_policy_path)
             )
 
+    results = ".compliance"
+
     # Load policy engine
     policy = Policy(
         severity=arguments.severity,
@@ -121,18 +125,32 @@ if __name__ == "__main__":
         instance=arguments.github_instance,
     )
 
+    os.makedirs(results, exist_ok=True)
+    policy.savePolicy(os.path.join(results, "policy.json"))
+
     Octokit.info("Finished loading policy")
 
     if arguments.display and policy.policy:
+        Octokit.info("```")
         for plcy, data in policy.policy.items():
-            Octokit.info(
-                " > {policy} == '{level}'".format(policy=plcy, level=data.get("level"))
-            )
+            if plcy == "name":
+                Octokit.info(f"name: {data}")
+            else:
+                Octokit.info(
+                    "{policy}: '{level}'".format(policy=plcy, level=data.get("level"))
+                )
+
+        Octokit.info("```")
 
     Octokit.endGroup()
 
     checks = Checks(
-        github, policy, display=arguments.display, debugging=arguments.debug
+        github,
+        policy,
+        debugging=arguments.debug,
+        display=arguments.display,
+        results_path=results,
+        caching=arguments.disable_caching,
     )
 
     errors = 0
@@ -143,6 +161,10 @@ if __name__ == "__main__":
 
         if not arguments.disable_dependabot:
             errors += checks.checkDependabot()
+
+        # Dependency Graph
+        if not arguments.disable_dependencies:
+            errors += checks.checkDependencies()
 
         # Dependency Graph Licensing
         if not arguments.disable_dependency_licensing:

@@ -1,0 +1,21 @@
+name: "Allow list approach to Dependencies"
+
+dependabot:
+  level: high
+
+# Make sure that you only allow licenses you want to allow
+licensing:
+  conditions:
+    ids:
+      - GPL-*
+      - LGPL-*
+      - AGPL-*
+
+# 
+dependencies:
+  conditions:
+    names:
+      - '*'
+  ignores:
+    imports:
+      names: ./examples/policies/allowlist-dependencies.txt

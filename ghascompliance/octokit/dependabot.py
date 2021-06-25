@@ -16,9 +16,16 @@ GRAPHQL_GET_INFO = """\
                         name
                     }
                 }
-                securityAdvisory{
+                securityAdvisory {
                     ghsaId
                     severity
+                    cwes(first: 100) {
+                        edges {
+                            node {
+                                cweId
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -28,7 +35,7 @@ GRAPHQL_GET_INFO = """\
 
 # https://docs.github.com/en/graphql/reference/objects#repository
 # https://docs.github.com/en/graphql/reference/objects#dependencygraphdependency
-GRAPHQL_LICENSE_INFO = """\
+GRAPHQL_DEPENDENCY_INFO = """\
 {
     repository(owner: "$owner", name: "$repo") {
         name
@@ -36,19 +43,26 @@ GRAPHQL_LICENSE_INFO = """\
             name
         }
         dependencyGraphManifests {
-        totalCount
-        edges {
-            node {
-                filename
-                dependencies{
-                    edges {
-                        node {
-                            packageName
-                            packageManager
-                            requirements
-                            repository {
-                                licenseInfo {
-                                    name
+            totalCount
+            edges {
+                node {
+                    filename
+                    dependencies {
+                        edges {
+                            node {
+                                packageName
+                                packageManager
+                                requirements
+                                repository {
+                                    isArchived
+                                    isDisabled
+                                    isEmpty
+                                    isFork
+                                    isSecurityPolicyEnabled
+                                    isInOrganization
+                                    licenseInfo {
+                                        name
+                                    }
                                 }
                             }
                         }
@@ -56,18 +70,26 @@ GRAPHQL_LICENSE_INFO = """\
                 }
             }
         }
-        }
     }
 }
 """
 
 
-class Dependabot(OctoRequests):
+class Dependencies(OctoRequests):
     def __init__(self, github: GitHub):
         instance = "https://api.github.com/graphql"
         super().__init__(github=github)
 
         self.headers["Accept"] = "application/vnd.github.hawkgirl-preview+json"
+
+        self.dependencies = []
+
+    @staticmethod
+    def createDependencyName(manager: str, dependency: str, version: str = None):
+        ret = manager.lower() + "://" + dependency.lower()
+        if version:
+            ret += "#" + version.lower()
+        return ret
 
     def getOpenAlerts(self, response: dict = {}):
 
@@ -91,18 +113,29 @@ class Dependabot(OctoRequests):
         if response.get("errors"):
             Octokit.error(json.dumps(response))
             raise Exception("Query failed to run")
+
+        results = []
+
         data = (
             response.get("data", {})
             .get("repository", {})
             .get("vulnerabilityAlerts", {})
             .get("nodes", [])
         )
+        for alert in data:
+            results.append(
+                {
+                    "createdAt": alert.get("createdAt"),
+                    "dismissReason": alert.get("dismissReason"),
+                }
+            )
         return data
 
-    def getLicenseInfo(self, response: dict = {}):
+    def getDependencies(self, response: dict = {}):
+
         variables = {"owner": self.github.owner, "repo": self.github.repo}
 
-        query = Template(GRAPHQL_LICENSE_INFO).substitute(**variables)
+        query = Template(GRAPHQL_DEPENDENCY_INFO).substitute(**variables)
 
         request = requests.post(
             "https://api.github.com/graphql",
@@ -138,10 +171,15 @@ class Dependabot(OctoRequests):
             for dependency in dependencies:
                 dependency = dependency.get("node", {})
 
-                dependency_manager = dependency.get("packageManager", "NA")
+                dependency_manager = dependency.get("packageManager", "NA").lower()
 
                 dependency_name = dependency.get("packageName", "NA")
-                dependency_repo = dependency.get("repository")
+                dependency_repo = dependency.get("repository", {})
+                dependency_requirement = (
+                    dependency.get("requirements", "")
+                    .replace("= ", "")
+                    .replace("^ ", "")
+                )
 
                 dependency_license = (
                     dependency_repo.get("licenseInfo") if dependency_repo else {}
@@ -153,12 +191,38 @@ class Dependabot(OctoRequests):
 
                 Octokit.debug(f" > {dependency_name} == {dependency_license_name}")
 
+                dependency_maintenance = []
+                for dep_maintenance in [
+                    "isArchived",
+                    "isDisabled",
+                    "isEmpty",
+                    "isLocked",
+                ]:
+                    if dependency_repo and dependency_repo.get(dep_maintenance, False):
+                        dependency_maintenance.append(
+                            dep_maintenance.replace("is", "", 1).lower()
+                        )
+
+                is_organization: bool = None
+                if dependency_repo:
+                    is_organization = dependency_repo.get("isInOrganization")
+
+                full_name = Dependencies.createDependencyName(
+                    dependency_manager, dependency_name, dependency_requirement
+                )
+
                 results.append(
                     {
                         "name": dependency_name,
+                        "full_name": full_name,
                         "manager": dependency_manager,
+                        "manager_path": manifest_path,
+                        "version": dependency_requirement,
                         "license": dependency_license_name,
+                        "maintenance": dependency_maintenance,
+                        "organization": is_organization,
                     }
                 )
 
+        self.dependencies = results
         return results

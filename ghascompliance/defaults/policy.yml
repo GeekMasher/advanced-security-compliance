@@ -3,18 +3,34 @@ name: Default Policy
 codescanning:
   level: error
 
+# Dependency Security Alters
 dependabot:
   level: high
 
+# Dependency Licensing Alerts
 licensing:
   conditions:
     ids:
       - GPL-*
       - LGPL-*
+      - AGPL-*
+
   warnings:
+    # Warning is the dependency isn't known
     ids:
       - Other
       - NA
+
+# General Dependency Alerts
+dependencies:
+  conditions:
+    imports:
+      # Import text list of Typosquatting dependencies
+      names: ghascompliance/defaults/typosquatting.txt
+  # warnings:
+  #   ids:
+  #     - Maintenance
+  #     - Organization
 
 secretscanning:
   level: all

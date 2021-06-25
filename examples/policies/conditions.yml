@@ -3,18 +3,23 @@ codescanning:
   level: error
   conditions:
     ids:
-      - java/sql-injection
+      # Code Scanning Rule identifier
+      - js/sql-injection
   ignores:
     ids:
       - js/log-injection
     names:
+      # Code Scanning Rule name
       - "Missing rate limiting"
 
 dependabot:
   level: high
   conditions:
     ids:
+      # GitHub Security Advisory ID
       - GHSA-446m-mv8f-q348
+      # CWE data from GitHub Advisory Database
+      - CWE-89
   ignores:
     ids:
       - GHSA-mh5c-679w-hh4r
@@ -22,17 +27,40 @@ dependabot:
 licensing:
   conditions:
     ids:
+      # License identifiers
       - GPL-2.0
       - GPL-3.0
     names:
-      - tunnel-agent
+      # Dependency Name (manager + name), best to use as this makes sure that
+      #  the right package manager is used
+      - maven://org.apache.struts
+      # Dependency Short Name (just name)
+      - org.apache.struts
+      # Dependency Full Name (manager + name + version)
+      - maven://org.apache.struts#2.0.5
   warnings:
     ids:
+      # Other is the 'Known Licensing' in GitHub Dependency Graph
       - Other
+      # NA or Not Available is where the GitHub Dependency Graph has no data 
+      #  on the repository
       - NA
   ignores:
     ids:
       - MIT License
+
+# 
+dependencies:
+  conditions:
+    imports:
+      # Import text list of Typosquatting dependencies
+      names: ghascompliance/defaults/typosquatting.txt
+  warnings:
+    ids:
+      # Is this project maintained?
+      # Currently this is looking at the data supplied by the dependency graph
+      - Maintenance
+      - Organization
 
 secretscanning:
   level: all
