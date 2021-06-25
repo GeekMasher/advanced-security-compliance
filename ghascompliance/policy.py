@@ -34,7 +34,7 @@ class Policy:
 
         self.severities = self._buildSeverityList(severity)
 
-        self.policy = None
+        self.policy = {}
         self.remediate = None
 
         self.instance = instance

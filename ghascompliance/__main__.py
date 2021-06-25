@@ -17,6 +17,7 @@ GITHUB_EVENT_NAME = os.environ.get("GITHUB_EVENT_NAME")
 # GITHUB_EVENT_PATH = os.environ.get("GITHUB_EVENT_PATH")
 GITHUB_REF = os.environ.get("GITHUB_REF")
 
+HERE = os.path.dirname(os.path.realpath(__file__))
 
 parser = argparse.ArgumentParser(tool_name)
 
@@ -40,7 +41,8 @@ github_arguments.add_argument("--github-ref", default=GITHUB_REF)
 github_arguments.add_argument("--github-policy")
 github_arguments.add_argument("--github-policy-branch", default="main")
 github_arguments.add_argument(
-    "--github-policy-path", default="ghascompliance/defaults/policy.yml"
+    "--github-policy-path",
+    default=os.path.join(HERE, "defaults", "policy.yml"),
 )
 
 thresholds = parser.add_argument_group("Thresholds")
@@ -107,7 +109,8 @@ if __name__ == "__main__":
         )
     elif arguments.github_policy_path:
         if not os.path.exists(arguments.github_policy_path):
-            Octokit.debug("Policy config file not present on system, skipping...")
+            Octokit.info("Policy config file not present on system, skipping...")
+            Octokit.info("File path skipped :: " + str(arguments.github_policy_path))
             arguments.github_policy_path = None
         else:
             Octokit.info(
