@@ -51,12 +51,12 @@ runs:
       run: |
         PYTHONPATH=${{ github.action_path }} && export PYTHONPATH=${{ github.action_path }}
         python3 -m ghascompliance \
-          --severity ${{ inputs.severity }} \
-          --action ${{ inputs.action }} \
-          --github-token ${{ inputs.token }} \
-          --github-repository ${{ inputs.repository }} \
-          --github-ref ${{ inputs.ref }} \
-          --github-policy ${{ inputs.policy }} \
-          --github-policy-path ${{ inputs.policy-path }} \
-          --github-policy-branch ${{ inputs.policy-branch }} \
+          --severity "${{ inputs.severity }}" \
+          --action "${{ inputs.action }}" \
+          --github-token "${{ inputs.token }}" \
+          --github-repository "${{ inputs.repository }}" \
+          --github-ref "${{ inputs.ref }}" \
+          --github-policy "${{ inputs.policy }}" \
+          --github-policy-path "${{ inputs.policy-path }}" \
+          --github-policy-branch "${{ inputs.policy-branch }}" \
           ${{ inputs.argvs }}
