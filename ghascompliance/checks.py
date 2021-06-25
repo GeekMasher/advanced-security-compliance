@@ -260,7 +260,8 @@ class Checks:
             # manager + name + version
             names.append(dependency.get("full_name"))
 
-            if self.policy.checkViolation("all", "dependencies", names=names, ids=ids):
+            #  none is set to just check if the name or pattern is discovered
+            if self.policy.checkViolation("none", "dependencies", names=names, ids=ids):
                 if self.display:
                     Octokit.error(
                         "Dependency Graph Alert :: {}".format(
