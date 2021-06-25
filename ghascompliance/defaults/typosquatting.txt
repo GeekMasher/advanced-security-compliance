@@ -1,14 +1,53 @@
 
+# ========== JavaScript ==========
+# https://blog.reversinglabs.com/blog/the-npm-package-that-walked-away-with-all-your-passwords
+npm://bb-builder
+
 # ========== Python ==========
-# Sources:
-#  - https://www.zdnet.com/article/two-malicious-python-libraries-removed-from-pypi/
+# https://www.zdnet.com/article/two-malicious-python-libraries-removed-from-pypi/
 
 pip://jeilyfish
 pip://python3-dateutil
 
+# https://blog.reversinglabs.com/blog/suppy-chain-malware-detecting-malware-in-package-manager-repositories
+
+pip://libari
+pip://libari
+pip://libari
+pip://libpesh
+pip://libpeshnx
+
+# https://nakedsecurity.sophos.com/2017/09/19/pypi-python-repository-hit-by-typosquatting-sneak-attack/
+
+pip://acqusition
+pip://apidev-coop
+pip://bzip
+pip://crypt
+pip://django-server
+pip://pwd
+pip://setup-tools
+pip://telnet
+pip://urllib
+
+# https://www.iqt.org/bewear-python-typosquatting-is-about-more-than-typos/
+
+pip://colourama
+pip://dajngo
+pip://djago
+pip://django
+pip://mateplotlib
+pip://mumpy
+pip://numipy
+pip://openvc
+pip://pandar
+pip://pysprak
+pip://pyymal
+pip://smplejson
+pip://urlib3
+pip://virtualnb
+
 # ========== Ruby ==========
-# Sources:
-#  - https://thehackernews.com/2020/04/rubygem-typosquatting-malware.html
+#  - https://blog.reversinglabs.com/blog/mining-for-malicious-ruby-gems
 #  - https://blog.reversinglabs.com/hubfs/Blog/ruby_malicious_gems.txt
 
 rubygems://atlas-client
