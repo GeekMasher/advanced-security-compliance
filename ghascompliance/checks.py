@@ -1,7 +1,7 @@
 import os
 import json
 from datetime import datetime
-from collections.abc import Callable
+from typing import Callable, List
 
 from ghascompliance.policy import Policy
 from ghascompliance.octokit import Octokit, GitHub
@@ -43,7 +43,7 @@ class Checks:
             self.writeResults(name, results, file_type=file_type)
             return results
 
-    def writeResults(self, name, results, file_type="json"):
+    def writeResults(self, name: str, results: str, file_type: str = "json"):
         path = os.path.join(self.results, name + "." + file_type)
         if not self.debugging:
             Octokit.debug("Skipping writing results to disk")

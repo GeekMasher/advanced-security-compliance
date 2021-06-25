@@ -6,6 +6,7 @@ import fnmatch
 import datetime
 import tempfile
 import subprocess
+from typing import List
 from urllib.parse import urlparse
 from ghascompliance.consts import SEVERITIES, TECHNOLOGIES, LICENSES
 from ghascompliance.octokit import Octokit
@@ -174,7 +175,7 @@ class Policy:
 
         return data
 
-    def loadPolicyImport(self, path):
+    def loadPolicyImport(self, path: str):
         results = []
         traversal = False
         paths = [
@@ -246,7 +247,7 @@ class Policy:
             Octokit.warning(f"Unknown severity provided :: {severity}")
         return severities
 
-    def matchContent(self, name: str, validators: list):
+    def matchContent(self, name: str, validators: List[str]):
         # Wildcard matching
         for validator in validators:
             results = fnmatch.filter([name], validator)
@@ -287,8 +288,8 @@ class Policy:
         self,
         severity: str,
         technology: str = None,
-        names: list[str] = [],
-        ids: list[str] = [],
+        names: List[str] = [],
+        ids: List[str] = [],
         creation_time: datetime.datetime = None,
     ):
         severity = severity.lower()
@@ -319,7 +320,7 @@ class Policy:
             return severity in self.severities
 
     def checkViolationAgainstPolicy(
-        self, severity: str, technology: str, names: list = [], ids: list = []
+        self, severity: str, technology: str, names: List[str] = [], ids: List[str] = []
     ):
         severities = []
         level = "all"
@@ -369,7 +370,7 @@ class Policy:
 
         return severity in severities
 
-    def checkLicensingViolation(self, license, dependency={}):
+    def checkLicensingViolation(self, license: str, dependency: dict = {}):
         license = license.lower()
 
         # Policy as Code
@@ -378,7 +379,7 @@ class Policy:
 
         return license in [l.lower() for l in LICENSES]
 
-    def checkLicensingViolationAgainstPolicy(self, license, dependency={}):
+    def checkLicensingViolationAgainstPolicy(self, license: str, dependency: dict = {}):
         policy = self.policy.get("licensing")
         license = license.lower()
 
