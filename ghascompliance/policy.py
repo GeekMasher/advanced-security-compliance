@@ -372,8 +372,11 @@ class Policy:
         policy = self.policy.get("licensing")
         license = license.lower()
 
-        dependency_name = dependency.get("name") + "://" + dependency.get("manager")
-        dependency_full = dependency.get("full_name")
+        dependency_short_name = dependency.get("name", "NA")
+        dependency_name = (
+            dependency.get("manager", "NA") + "://" + dependency.get("name", "NA")
+        )
+        dependency_full = dependency.get("full_name", "NA://NA#NA")
 
         warning_ids = [wrn.lower() for wrn in policy.get("warnings", {}).get("ids", [])]
         warning_names = [
@@ -385,9 +388,7 @@ class Policy:
             dependency_full, warning_names
         ):
             Octokit.warning(
-                "Dependency License Warning :: {full_name} = {license}".format(
-                    **dependency
-                )
+                f"Dependency License Warning :: {dependency_full} = {license}"
             )
 
         ingore_ids = [ign.lower() for ign in policy.get("ingores", {}).get("ids", [])]
@@ -402,7 +403,7 @@ class Policy:
             ign.lower() for ign in policy.get("conditions", {}).get("names", [])
         ]
 
-        for value in [license, dependency_full, dependency_name]:
+        for value in [license, dependency_full, dependency_name, dependency_short_name]:
 
             if self.matchContent(value, ingore_ids) or self.matchContent(
                 value, ingore_names

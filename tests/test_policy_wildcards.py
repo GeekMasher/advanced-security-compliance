@@ -70,7 +70,7 @@ class TestDefaultPolicyWildcards(unittest.TestCase):
 
     def testDefault(self):
         ids = self.policy.policy.get("licensing", {}).get("conditions", {}).get("ids")
-        self.assertEqual(ids, ["GPL-*", "LGPL-*"])
+        self.assertEqual(ids, ["GPL-*", "LGPL-*", "AGPL-*"])
 
     def testGPLVariants(self):
         self.assertTrue(self.policy.checkLicensingViolation("GPL-2.0"))
