@@ -175,8 +175,10 @@ class Dependencies(OctoRequests):
 
                 dependency_name = dependency.get("packageName", "NA")
                 dependency_repo = dependency.get("repository", {})
-                dependency_requirement = dependency.get("requirements", "").replace(
-                    "= ", ""
+                dependency_requirement = (
+                    dependency.get("requirements", "")
+                    .replace("= ", "")
+                    .replace("^ ", "")
                 )
 
                 dependency_license = (
