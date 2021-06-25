@@ -100,6 +100,14 @@ class TestPolicies(unittest.TestCase):
 
         self.assertFalse(self.policy.checkViolation("all", "dependencies", names=names))
 
+    def testDependencyFullNamesMatch(self):
+        name = "maven://com.geekmasher.test#1.0.0"
+        self.policy.policy = {"dependencies": {"conditions": {"names": [name]}}}
+
+        names = ["maven://com.geekmasher.test", name]
+
+        self.assertTrue(self.policy.checkViolation("all", "dependencies", names=names))
+
     def testDependencyNamesDoMatch(self):
         self.policy.policy = {
             "dependencies": {"conditions": {"names": ["maven://org.test.package"]}}

@@ -125,6 +125,7 @@ if __name__ == "__main__":
         instance=arguments.github_instance,
     )
 
+    os.makedirs(results, exist_ok=True)
     policy.savePolicy(os.path.join(results, "policy.json"))
 
     Octokit.info("Finished loading policy")
