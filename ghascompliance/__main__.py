@@ -114,6 +114,8 @@ if __name__ == "__main__":
                 "Policy config file set: {}".format(arguments.github_policy_path)
             )
 
+    results = ".compliance"
+
     # Load policy engine
     policy = Policy(
         severity=arguments.severity,
@@ -122,6 +124,8 @@ if __name__ == "__main__":
         token=arguments.github_token,
         instance=arguments.github_instance,
     )
+
+    policy.savePolicy(os.path.join(results, "policy.json"))
 
     Octokit.info("Finished loading policy")
 
@@ -144,6 +148,7 @@ if __name__ == "__main__":
         policy,
         debugging=arguments.debug,
         display=arguments.display,
+        results_path=results,
         caching=arguments.disable_caching,
     )
 

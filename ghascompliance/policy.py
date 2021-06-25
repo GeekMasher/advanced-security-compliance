@@ -1,4 +1,5 @@
 import os
+import json
 import yaml
 import shutil
 import fnmatch
@@ -215,6 +216,15 @@ class Policy:
 
                 break
         return results
+
+    def savePolicy(self, path: str):
+        #  Always clear the file
+        Octokit.info("Saving Policy...")
+        if os.path.exists(path):
+            os.remove(path)
+        with open(path, "w") as handle:
+            json.dump(self.policy, handle, indent=2)
+        Octokit.info("Policy saved")
 
     def _buildSeverityList(self, severity: str):
         if not severity:
