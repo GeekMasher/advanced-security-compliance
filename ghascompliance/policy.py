@@ -317,7 +317,11 @@ class Policy:
                 severity, technology, names=names, ids=ids
             )
         else:
-            if severity not in SEVERITIES:
+            if severity == "none":
+                return False
+            elif severity == "all":
+                return True
+            elif severity not in SEVERITIES:
                 Octokit.warning(f"Unknown Severity used - {severity}")
 
             return severity in self.severities
