@@ -1,6 +1,6 @@
-from datetime import datetime
 import os
 import json
+from datetime import datetime
 from collections.abc import Callable
 
 from ghascompliance.policy import Policy
@@ -84,7 +84,11 @@ class Checks:
             )
 
             if self.policy.checkViolation(
-                severity, "codescanning", names=names, ids=ids
+                severity,
+                "codescanning",
+                names=names,
+                ids=ids,
+                creation_time=alert_creation_time,
             ):
                 if self.display:
                     error_format = "{tool_name} - {creation_time} - {rule_name}"
@@ -150,13 +154,17 @@ class Checks:
             advisory = alert.get("securityAdvisory", {})
             severity = advisory.get("severity").lower()
 
+            alert_creation_time = datetime.strptime(
+                alert.get("createdAt"), "%Y-%m-%dT%XZ"
+            )
+
             ids = []
+            #  GitHub Advisory
             ids.append(advisory.get("ghsaId").lower())
             #  CWE support
             cwes = []
             for cwe in advisory.get("cwes", {}).get("edges", []):
                 cwes.append(cwe.get("node", {}).get("cweId"))
-
             ids.extend(cwes)
 
             names = []
@@ -171,7 +179,13 @@ class Checks:
                     "Dependency Graph to Dependabot alert match failed :: " + full_name
                 )
 
-            if self.policy.checkViolation(severity, "dependabot", names=names, ids=ids):
+            if self.policy.checkViolation(
+                severity,
+                "dependabot",
+                names=names,
+                ids=ids,
+                creation_time=alert_creation_time,
+            ):
                 if self.display:
                     Octokit.error("Dependabot Alert :: {}".format(full_name))
 
@@ -296,10 +310,16 @@ class Checks:
 
         for alert in alerts:
 
+            alert_creation_time = datetime.strptime(
+                alert.get("created_at"), "%Y-%m-%dT%XZ"
+            )
+
             ids = []
             ids.append(alert.get("secret_type"))
 
-            if self.policy.checkViolation("critical", "secretscanning", ids=ids):
+            if self.policy.checkViolation(
+                "critical", "secretscanning", ids=ids, creation_time=alert_creation_time
+            ):
                 if self.display:
                     Octokit.info("Unresolved Secret - {secret_type}".format(**alert))
 

@@ -253,7 +253,7 @@ class Policy:
         # Midnight "today"
         now = datetime.datetime.now().date()
 
-        if remediate.get(severity):
+        if creation_time and remediate.get(severity):
             alert_datetime = creation_time + datetime.timedelta(
                 days=int(remediate.get(severity))
             )
@@ -277,8 +277,8 @@ class Policy:
         self,
         severity: str,
         technology: str = None,
-        names: list[str] = None,
-        ids: list[str] = None,
+        names: list[str] = [],
+        ids: list[str] = [],
         creation_time: datetime.datetime = None,
     ):
         severity = severity.lower()
