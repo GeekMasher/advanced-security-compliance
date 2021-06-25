@@ -244,8 +244,9 @@ class Policy:
                 return True
         return False
 
-    def checkViolation(
-        self, severity: str, technology: str = None, names: list = [], ids: list = [],
+    def checkViolationRemediation(
+        self,
+        severity: str,
         remediate: dict,
         creation_time: datetime.datetime,
     ):
@@ -276,8 +277,8 @@ class Policy:
         self,
         severity: str,
         technology: str = None,
-        name: str = None,
-        id: str = None,
+        names: list[str] = None,
+        ids: list[str] = None,
         creation_time: datetime.datetime = None,
     ):
         severity = severity.lower()
@@ -292,7 +293,7 @@ class Policy:
             )
             if self.policy.get(technology, {}).get("level"):
                 return violation_remediation and self.checkViolationAgainstPolicy(
-                    severity, technology, name=name, id=id
+                    severity, technology, names=names, ids=ids
                 )
             else:
                 return violation_remediation
