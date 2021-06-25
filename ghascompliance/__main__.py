@@ -23,6 +23,7 @@ parser = argparse.ArgumentParser(tool_name)
 parser.add_argument(
     "--debug", action="store_true", default=bool(os.environ.get("DEBUG"))
 )
+parser.add_argument("--disable-caching", action="store_false")
 parser.add_argument("--disable-code-scanning", action="store_true")
 parser.add_argument("--disable-dependabot", action="store_true")
 parser.add_argument("--disable-dependency-licensing", action="store_true")
@@ -143,7 +144,7 @@ if __name__ == "__main__":
         policy,
         debugging=arguments.debug,
         display=arguments.display,
-        caching=True,
+        caching=arguments.disable_caching,
     )
 
     errors = 0
