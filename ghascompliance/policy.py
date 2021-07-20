@@ -65,9 +65,18 @@ class Policy:
 
         Octokit.info(f"Cloning policy repo - {self.repository}")
 
+        cmd = ["git", "clone", "--depth=1"]
+
+        if self.branch:
+            cmd.extend(["-b", self.branch])
+
+        cmd.extend([repo, self.temp_repo])
+
+        Octokit.debug(f"Running command - {cmd}")
+
         with open(os.devnull, "w") as null:
             subprocess.run(
-                ["git", "clone", "--depth=1", repo, self.temp_repo],
+                cmd,
                 stdout=null,
                 stderr=null,
             )
