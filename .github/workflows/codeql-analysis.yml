@@ -29,7 +29,7 @@ jobs:
       uses: github/codeql-action/init@v1
       with:
         languages: ${{ matrix.language }}
-        config-file: GeekMasher/security-queries/config/codeql-local.yml@main
+        # config-file: GeekMasher/security-queries/config/codeql-local.yml@main
         # queries: ./path/to/local/query, your-org/your-repo/queries@main
 
     - name: Autobuild
