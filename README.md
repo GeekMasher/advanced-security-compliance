@@ -12,7 +12,7 @@ Here is how you can quickly setup advanced-security-compliance.
 ```yaml
 # Compliance
 - name: Advance Security Compliance Action
-  uses: GeekMasher/advanced-security-compliance@v1.2
+  uses: GeekMasher/advanced-security-compliance@1.4
 ```
 
 #### Action Examples
@@ -55,7 +55,7 @@ Here is an example of using a simple yet cross-organization using Policy as Code
 ```yaml
 # Compliance
 - name: Advance Security Compliance Action
-  uses: GeekMasher/advanced-security-compliance@v1.2
+  uses: GeekMasher/advanced-security-compliance@1.4
   with:
     # The owner/repo of where the policy is stored  
     policy: GeekMasher/security-queries
@@ -216,6 +216,13 @@ Some things to consider when using imports:
   - `GitHub Action / CLI directory`
   - `Cloned Repository Directory`
 - Imports are only allowed from a number of predefined paths to prevent loading data on the system (AKA, path traversal). 
+
+
+## Dependency Typosquatting
+
+Dependency Typosquatting is a package or library will malicious intent to compromise supply chains or CI systems by extracting data from the environment to a threat actor.
+
+Built into this tool is the ability to look up every package known in your supply chain from the GitHub Dependency Graph and check if it matches against [a list of know malicious packages](ghascompliance/defaults/typosquatting.txt).
 
 
 ## Licensing Notice

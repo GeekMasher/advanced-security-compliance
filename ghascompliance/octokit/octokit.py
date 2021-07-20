@@ -1,5 +1,6 @@
 import os
 import json
+from sys import prefix
 import yaml
 import logging
 import requests
@@ -77,6 +78,7 @@ class GitHub:
 class Octokit:
     __ERRORS__ = []
     __EVENT__ = None
+    __PREFIX_WARNING__ = ""
 
     logger = logging.getLogger(__name__)
 
@@ -94,9 +96,12 @@ class Octokit:
 
     @staticmethod
     def warning(msg):
+        prepfix = (
+            Octokit.__PREFIX_WARNING__ + " :: " if Octokit.__PREFIX_WARNING__ else ""
+        )
         logging.warning(msg)
         if Octokit.__EVENT__:
-            print("::warning :: {msg}".format(msg=msg))
+            print("::warning :: {prefix}{msg}".format(msg=msg, prefix=prepfix))
         else:
             print("[!] " + msg)
 
@@ -106,27 +111,31 @@ class Octokit:
         logging.error(msg)
 
         if Octokit.__EVENT__:
-            print("::error ::{msg}".format(msg=msg))
+            print("::error ::{msg}".format(msg=msg), flush=True)
         elif file:
             print(
                 "::error file={file},line={line},col={col}::{msg}".format(
                     msg=msg, file=file, line=line, col=col
-                )
+                ),
+                flush=True,
             )
         else:
             print("[!] {msg}".format(msg=msg))
 
     @staticmethod
-    def createGroup(name):
+    def createGroup(name, warning_prepfix=None):
+        Octokit.__PREFIX_WARNING__ = warning_prepfix
+
         if Octokit.__EVENT__:
             print("::group::{name}".format(name=name))
         else:
-            print("{:-^42}".format(name))
+            print("{:-^64}".format(" " + name + " "))
 
     @staticmethod
     def endGroup():
         if Octokit.__EVENT__:
             print("::endgroup::")
+        Octokit.__PREFIX__ = ""
 
     @staticmethod
     def setOutput(key, value):

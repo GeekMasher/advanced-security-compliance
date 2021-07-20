@@ -1,0 +1,5 @@
+# Allow Maven org deps
+maven://org.apache.maven.*
+
+# Allow Google org deps
+maven://com.google.*

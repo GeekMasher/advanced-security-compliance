@@ -13,7 +13,13 @@ SEVERITIES = [
     "notes",
 ]
 
-TECHNOLOGIES = ["codescanning", "dependabot", "licensing", "secretscanning"]
+TECHNOLOGIES = [
+    "codescanning",
+    "dependabot",
+    "licensing",
+    "dependencies",
+    "secretscanning",
+]
 
 LICENSES = [
     # GPL
