@@ -9,13 +9,14 @@ from ghascompliance.octokit import Octokit, GitHub
 from ghascompliance.policy import Policy
 from ghascompliance.checks import *
 
-
+# https://docs.github.com/en/actions/reference/environment-variables#default-environment-variables
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 GITHUB_REPOSITORY = os.environ.get("GITHUB_REPOSITORY")
 GITHUB_OWNER = os.environ.get("GITHUB_OWNER")
 GITHUB_EVENT_NAME = os.environ.get("GITHUB_EVENT_NAME")
 # GITHUB_EVENT_PATH = os.environ.get("GITHUB_EVENT_PATH")
 GITHUB_REF = os.environ.get("GITHUB_REF")
+GITHUB_INSTANCE = os.environ.get("GITHUB_SERVER_URL", "https://github.com")
 
 HERE = os.path.dirname(os.path.realpath(__file__))
 
@@ -33,7 +34,7 @@ parser.add_argument("--disable-secret-scanning", action="store_true")
 
 github_arguments = parser.add_argument_group("GitHub")
 github_arguments.add_argument("--github-token", default=GITHUB_TOKEN)
-github_arguments.add_argument("--github-instance", default="https://github.com")
+github_arguments.add_argument("--github-instance", default=GITHUB_INSTANCE)
 github_arguments.add_argument("--github-repository", default=GITHUB_REPOSITORY)
 # github_arguments.add_argument("--github-event", default=GITHUB_EVENT_PATH)
 github_arguments.add_argument("--github-ref", default=GITHUB_REF)
@@ -83,6 +84,9 @@ if __name__ == "__main__":
         instance=arguments.github_instance,
         token=arguments.github_token,
     )
+
+    Octokit.info(f"GitHub Repository :: {github.repo}")
+    Octokit.info(f"GitHub Instance :: {github.instance}")
 
     if arguments.list_severities:
         for severity in SEVERITIES:
