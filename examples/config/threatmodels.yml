@@ -1,15 +1,20 @@
 name: "Standard Configuration"
 
+# Policy Settings
 policy:
   repository: GeekMasher/security-queries
-  path: policies/advance.yml
+  path: policies/default.yml
   branch: main
   severity: Error
   display: false
 
 
 threat_models:
-  source: ./.github/compliance.yml
+  # If the source is set, the file is required on all repositories that uses
+  #  this action.
+  source: GeekMasher/security-queries/policies/applications.yml@main
+
+  # All 3 models use the same policy settings format
   high:
     repository: GeekMasher/security-queries
     path: policies/high.yml

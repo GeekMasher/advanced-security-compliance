@@ -11,6 +11,12 @@ class ThreatModel:
     level: str = "normal"
 
 
+@dataclass
+class ThreatApplicationModel:
+    repository: str = None
+    level: str = "normal"
+
+
 def selectThreatModel(config: Config, level: str):
     if level is None or level == "":
         return config.policy
@@ -29,11 +35,25 @@ def selectThreatModel(config: Config, level: str):
     return config.policy
 
 
-def loadFile(path: str) -> ThreatModel:
+def loadFile(path: str, repository: str = None) -> str:
     if not os.path.exists(path):
         raise Exception(f"Threat Modeling Compliance file does not exists at: {path}")
 
     with open(path, "r") as handle:
         content = yaml.safe_load(handle)
 
-    return ThreatModel(**content)
+    try:
+        tm = ThreatModel(**content)
+        return tm.level
+    except Exception as err:
+        pass
+
+    Octokit.info(f"Threat Model - application source: {path}")
+
+    for _, app_data in content.items():
+        tam = ThreatApplicationModel(**app_data)
+        if tam.repository == repository:
+            Octokit.info(f"Threat Model - Found repository: {repository}")
+            return tam.level
+
+    return "normal"

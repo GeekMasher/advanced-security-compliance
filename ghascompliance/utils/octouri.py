@@ -8,6 +8,11 @@ class OctoUri:
     path: str = None
     branch: str = None
 
+    def __str__(self) -> str:
+        if self.repository:
+            return f"{self.repository}/{self.path}@{self.branch}"
+        return f"{self.path}"
+
 
 def validateUri(uri: str) -> OctoUri:
     #  Always a relative path

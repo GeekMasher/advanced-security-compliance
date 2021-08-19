@@ -98,12 +98,27 @@ if __name__ == "__main__":
             config = Config.load(arguments.config)
 
         if config.threat_models:
-            source = config.threat_models.source
+            Octokit.info("Threat modeling enabled...")
 
-            Octokit.info("Threat modeling enabled")
-            thread_model_content = loadFile(source)
+            source = validateUri(config.threat_models.source)
 
-            config.policy = selectThreatModel(config, thread_model_content.level)
+            if source.repository:
+                Octokit.info(f"Loading Threat Model file from Repository: {source}")
+
+                threat_model_path = clone(
+                    source.repository,
+                    source.branch,
+                    token=arguments.github_token,
+                )
+                threat_model_path = os.path.join(threat_model_path, source.path)
+                thread_model_level = loadFile(
+                    threat_model_path, arguments.github_repository
+                )
+
+            else:
+                thread_model_level = loadFile(source.path, arguments.github_repository)
+
+            config.policy = selectThreatModel(config, thread_model_level)
 
         Octokit.info(f"Loaded configuration file: {arguments.config}")
 

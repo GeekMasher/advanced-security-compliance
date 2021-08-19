@@ -32,6 +32,7 @@ class PolicyConfig:
 @dataclass
 class ThreatModelConfig:
     source: str = None
+
     high: PolicyConfig = None
     normal: PolicyConfig = None
     low: PolicyConfig = None
