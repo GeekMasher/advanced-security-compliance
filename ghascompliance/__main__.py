@@ -9,6 +9,7 @@ from ghascompliance.octokit import Octokit, GitHub
 from ghascompliance.policy import Policy
 from ghascompliance.checks import *
 from ghascompliance.utils import Config, validateUri, clone
+from ghascompliance.utils.threatmodel import selectThreatModel, loadFile
 
 # https://docs.github.com/en/actions/reference/environment-variables#default-environment-variables
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
@@ -95,6 +96,14 @@ if __name__ == "__main__":
                 raise Exception("Configuration set but not found")
 
             config = Config.load(arguments.config)
+
+        if config.threat_models:
+            source = config.threat_models.source
+
+            Octokit.info("Threat modeling enabled")
+            thread_model_content = loadFile(source)
+
+            config.policy = selectThreatModel(config, thread_model_content.level)
 
         Octokit.info(f"Loaded configuration file: {arguments.config}")
 

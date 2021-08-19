@@ -1,0 +1,30 @@
+name: "Standard Configuration"
+
+policy:
+  repository: GeekMasher/security-queries
+  path: policies/advance.yml
+  branch: main
+  severity: Error
+  display: false
+
+
+threat_models:
+  source: ./.github/compliance.yml
+  high:
+    repository: GeekMasher/security-queries
+    path: policies/high.yml
+    branch: main
+  normal:
+    repository: GeekMasher/security-queries
+    path: policies/default.yml
+    branch: main
+  low:
+    repository: GeekMasher/security-queries
+    path: policies/low.yml
+    branch: main
+
+checkers:
+  # Disable all dependency tooling
+  dependabot: false
+  dependencies: false
+  licensing: false
