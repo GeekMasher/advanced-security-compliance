@@ -204,7 +204,7 @@ class Checks:
         )
 
         licensing_errors = 0
-        #
+
         dependabot = Dependencies(self.github)
 
         alerts = self.getResults("dependencies", dependabot.getDependencies)
