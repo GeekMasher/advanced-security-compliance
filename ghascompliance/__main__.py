@@ -8,6 +8,7 @@ from ghascompliance.consts import SEVERITIES
 from ghascompliance.octokit import Octokit, GitHub
 from ghascompliance.policy import Policy
 from ghascompliance.checks import *
+from ghascompliance.utils import Config, validateUri, clone
 
 # https://docs.github.com/en/actions/reference/environment-variables#default-environment-variables
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
@@ -20,11 +21,15 @@ GITHUB_INSTANCE = os.environ.get("GITHUB_SERVER_URL", "https://github.com")
 
 HERE = os.path.dirname(os.path.realpath(__file__))
 
+POLICY_PATH = os.path.join(HERE, "defaults", "policy.yml")
+
 parser = argparse.ArgumentParser(tool_name)
 
 parser.add_argument(
     "--debug", action="store_true", default=bool(os.environ.get("DEBUG"))
 )
+parser.add_argument("--config", type=str)
+
 parser.add_argument("--disable-caching", action="store_false")
 parser.add_argument("--disable-code-scanning", action="store_true")
 parser.add_argument("--disable-dependabot", action="store_true")
@@ -43,7 +48,7 @@ github_arguments.add_argument("--github-policy")
 github_arguments.add_argument("--github-policy-branch", default="main")
 github_arguments.add_argument(
     "--github-policy-path",
-    default=os.path.join(HERE, "defaults", "policy.yml"),
+    default=POLICY_PATH,
 )
 
 thresholds = parser.add_argument_group("Thresholds")
@@ -68,6 +73,35 @@ if __name__ == "__main__":
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
 
+    Octokit.createGroup("Initialise")
+
+    if arguments.config:
+        config_uri = validateUri(arguments.config)
+
+        if config_uri.repository and config_uri.branch:
+            Octokit.info("Loading config from repository...")
+            config_path = clone(
+                config_uri.repository, config_uri.branch, token=arguments.github_token
+            )
+            config_path = os.path.join(config_path, config_uri.path)
+            Octokit.info(f"Loaded configuration file: {config_path}")
+
+            config = Config.load(config_path)
+
+        else:
+            Octokit.info("Loading config from file path")
+
+            if not os.path.exists(arguments.config):
+                raise Exception("Configuration set but not found")
+
+            config = Config.load(arguments.config)
+
+        Octokit.info(f"Loaded configuration file: {arguments.config}")
+
+    else:
+        Octokit.debug(f"Using default configuration settings")
+        config = Config()
+
     if arguments.debug:
         Octokit.debug("Debugging enabled")
 
@@ -81,7 +115,7 @@ if __name__ == "__main__":
 
     github = GitHub(
         repository=arguments.github_repository,
-        instance=arguments.github_instance,
+        instance=arguments.github_instance or config.github.instance,
         token=arguments.github_token,
     )
 
@@ -96,7 +130,9 @@ if __name__ == "__main__":
 
     policy_location = None
 
+    Octokit.endGroup()
     Octokit.createGroup("Policy as Code")
+
     if arguments.github_policy and arguments.github_policy != "":
         # Process [org]/repo
         if "/" in arguments.github_policy:
@@ -111,6 +147,17 @@ if __name__ == "__main__":
                 arguments.github_instance, policy_location, arguments.github_policy_path
             )
         )
+
+    elif config.policy.repository and arguments.github_policy_path == POLICY_PATH:
+        policy_location = config.policy.repository
+        arguments.github_policy_path = config.policy.path
+
+        Octokit.info(
+            "Loading Policy as Code from Configuration - {}/{}".format(
+                config.policy.repository, config.policy.path
+            )
+        )
+
     elif arguments.github_policy_path:
         if not os.path.exists(arguments.github_policy_path):
             Octokit.info("Policy config file not present on system, skipping...")
@@ -125,11 +172,11 @@ if __name__ == "__main__":
 
     # Load policy engine
     policy = Policy(
-        severity=arguments.severity,
+        severity=arguments.severity or config.policy.severity,
         repository=policy_location,
         path=arguments.github_policy_path,
         token=arguments.github_token,
-        instance=arguments.github_instance,
+        instance=arguments.github_instance or config.policy.instance,
     )
 
     os.makedirs(results, exist_ok=True)
@@ -155,7 +202,7 @@ if __name__ == "__main__":
         github,
         policy,
         debugging=arguments.debug,
-        display=arguments.display,
+        display=arguments.display or config.policy.display,
         results_path=results,
         caching=arguments.disable_caching,
     )
@@ -163,21 +210,21 @@ if __name__ == "__main__":
     errors = 0
 
     try:
-        if not arguments.disable_code_scanning:
+        if not arguments.disable_code_scanning and config.checkers.codescanning:
             errors += checks.checkCodeScanning()
 
-        if not arguments.disable_dependabot:
+        if not arguments.disable_dependabot and config.checkers.dependabot:
             errors += checks.checkDependabot()
 
         # Dependency Graph
-        if not arguments.disable_dependencies:
+        if not arguments.disable_dependencies and config.checkers.dependencies:
             errors += checks.checkDependencies()
 
         # Dependency Graph Licensing
-        if not arguments.disable_dependency_licensing:
+        if not arguments.disable_dependency_licensing and config.checkers.licensing:
             errors += checks.checkDependencyLicensing()
 
-        if not arguments.disable_secret_scanning:
+        if not arguments.disable_secret_scanning and config.checkers.secretscanning:
             errors += checks.checkSecretScanning()
 
     except Exception as err:
