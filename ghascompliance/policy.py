@@ -405,12 +405,13 @@ class Policy:
         )
         dependency_full = dependency.get("full_name", "NA://NA#NA")
 
+        # gather warning ids and names
         warning_ids = [wrn.lower() for wrn in policy.get("warnings", {}).get("ids", [])]
         warning_names = [
             wrn.lower() for wrn in policy.get("warnings", {}).get("names", [])
         ]
 
-        #  If the license name is in the warnings list
+        #  if the license name is in the warnings list generate a warning
         if self.matchContent(license, warning_ids) or self.matchContent(
             dependency_full, warning_names
         ):
@@ -418,11 +419,13 @@ class Policy:
                 f"Dependency License Warning :: {dependency_full} = {license}"
             )
 
+        # gather ignore ids and names
         ingore_ids = [ign.lower() for ign in policy.get("ingores", {}).get("ids", [])]
         ingore_names = [
             ign.lower() for ign in policy.get("ingores", {}).get("names", [])
         ]
 
+        # gather condition ids and names
         condition_ids = [
             ign.lower() for ign in policy.get("conditions", {}).get("ids", [])
         ]
@@ -432,14 +435,18 @@ class Policy:
 
         for value in [license, dependency_full, dependency_name, dependency_short_name]:
 
+            # return false (ignore) if name or id is defined in the ignore portion of the policy
             if self.matchContent(value, ingore_ids) or self.matchContent(
                 value, ingore_names
             ):
                 return False
-
+            # annotate error and return true if name or id is defined as a condition
             elif self.matchContent(value, condition_ids) or self.matchContent(
                 value, conditions_names
             ):
+                Octokit.error(
+                    f"Dependency License Violation :: {dependency_full} == {license}"
+                )
                 return True
 
         return False
