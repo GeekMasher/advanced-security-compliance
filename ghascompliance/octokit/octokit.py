@@ -37,10 +37,19 @@ class GitHub:
         # TODO: Validate instance
         url = urlparse(instance)
         self.set("instance", instance)
-        # TODO: Validate API url
-        api = url.scheme + "://api." + url.netloc
-        self.set("api.rest", api)
-        self.set("api.graphql", api + "/graphql")
+
+        # GitHub Cloud
+        if url.netloc == "github.com":
+            api = url.scheme + "://api." + url.netloc
+            self.set("api.rest", api)
+            self.set("api.graphql", api + "/graphql")
+        # GitHub Server
+        #  https://docs.github.com/en/enterprise-server@3.1/rest/overview/resources-in-the-rest-api#schema
+        else:
+            api = url.scheme + "://" + url.netloc + "/api"
+            self.set("api.rest", api + "/v3")
+            self.set("api.graphql", api + "/graphql")
+
         # TODO: Validate ref; examples: refs/heads/main
         self.set("ref", ref)
 
