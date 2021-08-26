@@ -2,19 +2,9 @@ import os
 import yaml
 from dataclasses import dataclass
 
-
-def _dataclass_from_dict(klass, dikt):
-    try:
-        fieldtypes = klass.__annotations__
-        return klass(**{f: _dataclass_from_dict(fieldtypes[f], dikt[f]) for f in dikt})
-
-    except KeyError as err:
-        raise Exception(f"Unknown key being set in configuration file : {err}")
-
-    except AttributeError as err:
-        if isinstance(dikt, (tuple, list)):
-            return [_dataclass_from_dict(klass.__args__[0], f) for f in dikt]
-        return dikt
+from ghascompliance.utils.dataclasses import _dataclass_from_dict
+from ghascompliance.reporting.models import *
+from ghascompliance.utils.octouri import validateUri
 
 
 @dataclass
@@ -27,6 +17,14 @@ class PolicyConfig:
     severity: str = "Error"
 
     display: bool = False
+
+    def __post_init__(self):
+        if self.path:
+            uri = validateUri(self.path)
+            if uri.repository:
+                self.repository = uri.repository
+                self.branch = uri.branch
+                self.path = uri.path
 
 
 @dataclass
@@ -48,26 +46,22 @@ class CheckersConfig:
 
 
 @dataclass
-class IssuesConfig:
-    owner: str = None
-    repository: str = None
-
-
-@dataclass
-class ReportingConfig:
-    issues: IssuesConfig = IssuesConfig()
-
-
-@dataclass
 class GitHubConfig:
     instance: str = None
     repository: str = None
 
 
 @dataclass
+class OrganizationConfig:
+    name: str = None
+
+
+@dataclass
 class Config:
     name: str = "Configuration"
     github: GitHubConfig = GitHubConfig()
+
+    organization: OrganizationConfig = OrganizationConfig()
 
     policy: PolicyConfig = PolicyConfig()
 

@@ -1,0 +1,15 @@
+security-queries:
+  repository: GeekMasher/security-queries
+  level: low
+
+compliance:
+  repository: octodemo/demo-ghas-geekmasher-compliance
+  level: low
+
+pixi:
+  repository: GeekMasher/Pixi
+  level: high
+
+juiceshop:
+  repository: bkimminich/juice-shop
+  level: high

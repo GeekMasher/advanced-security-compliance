@@ -119,6 +119,7 @@ if __name__ == "__main__":
                 thread_model_level = loadFile(source.path, arguments.github_repository)
 
             config.policy = selectThreatModel(config, thread_model_level)
+            Octokit.debug(f"Selected Threat Model: {config.policy}")
 
         Octokit.info(f"Loaded configuration file: {arguments.config}")
 

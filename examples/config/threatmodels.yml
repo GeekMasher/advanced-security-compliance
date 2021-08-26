@@ -2,9 +2,7 @@ name: "Standard Configuration"
 
 # Policy Settings
 policy:
-  repository: GeekMasher/security-queries
-  path: policies/default.yml
-  branch: main
+  path: GeekMasher/security-queries/policies/default.yml@main
   severity: Error
   display: false
 
