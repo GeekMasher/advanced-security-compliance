@@ -19,13 +19,36 @@ class TestPolicyLoading(unittest.TestCase):
         self.assertEqual(uri.path, path)
         self.assertIsNone(uri.branch)
 
-    def testUriGitRepo(self):
+    def testFullUriGitRepo(self):
         path = "GeekMasher/security-queries/policies/advance.yml@main"
         uri = validateUri(path)
 
         self.assertEqual(uri.repository, "GeekMasher/security-queries")
         self.assertEqual(uri.path, "policies/advance.yml")
         self.assertEqual(uri.branch, "main")
+
+    def testUriGitRepo(self):
+        repo = "GeekMasher/security-queries"
+        uri = validateUri(repo)
+
+        self.assertEqual(uri.repository, repo)
+        self.assertIsNone(uri.path)
+        self.assertIsNone(uri.branch)
+
+    def testUriAbsolutePath(self):
+        path = "/etc/password"
+
+        with self.assertRaises(Exception) as context:
+            uri = validateUri(path)
+
+        self.assertTrue("Absolute paths are not allowed" in str(context.exception))
+
+    def testRelativePathWithPathTraversal(self):
+        path = "./../../../../etc/password"
+        with self.assertRaises(Exception) as context:
+            uri = validateUri(path)
+
+        self.assertTrue("Absolute paths are not allowed" in str(context.exception))
 
     def testUriGitRepoNoPath(self):
         path = "GeekMasher/security-queries@main"

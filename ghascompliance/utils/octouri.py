@@ -1,3 +1,5 @@
+from os import getcwd
+from pathlib import Path
 from dataclasses import dataclass
 
 
@@ -9,17 +11,18 @@ class OctoUri:
     branch: str = None
 
     def __str__(self) -> str:
-        if self.repository:
+        if self.repository and self.path and self.branch:
             return f"{self.repository}/{self.path}@{self.branch}"
+        elif self.repository and self.path:
+            return f"{self.repository}/{self.path}"
+        elif self.repository:
+            return self.repository
         return f"{self.path}"
 
 
 def validateUri(uri: str) -> OctoUri:
-    #  Always a relative path
-    if uri.startswith("./") or uri.startswith("/"):
-        return OctoUri(path=uri)
-    #  Repo based path
-    elif "@" in uri:
+    #  Octo URI string
+    if "@" in uri:
 
         repo, branch = uri.split("@", 1)
 
@@ -31,5 +34,15 @@ def validateUri(uri: str) -> OctoUri:
             path = None
 
         return OctoUri(f"{org}/{repo}", path, branch)
+
+    #  Paths
+    uri = str(Path(uri).resolve()).replace(getcwd() + "/", "")
+
+    #  Absolute paths
+    if uri.startswith("/"):
+        raise Exception(f"Absolute paths are not allowed: {uri}")
+    #  Repo based path
+    elif uri.count("/") == 1:
+        return OctoUri(repository=uri)
 
     return OctoUri(path=uri)
