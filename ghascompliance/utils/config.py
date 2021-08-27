@@ -65,11 +65,11 @@ class Config:
 
     policy: PolicyConfig = PolicyConfig()
 
-    threat_models: ThreatModelConfig = ThreatModelConfig()
+    threat_models: ThreatModelConfig = None
 
     checkers: CheckersConfig = CheckersConfig()
 
-    reporting: ReportingConfig = ReportingConfig()
+    reporting: ReportingConfig = None
 
     @staticmethod
     def load(path: str):
