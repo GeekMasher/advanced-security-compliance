@@ -28,3 +28,10 @@ class TestPolicyLoading(unittest.TestCase):
         self.assertEqual(
             github.get("api.graphql"), "https://ghes.example.com/api/graphql"
         )
+
+    def testGitHubRepoUrl(self):
+        instance = "https://ghes.example.com"
+        repo = "GeekMasher/advanced-security-compliance"
+        github = GitHub(repo, instance=instance)
+
+        self.assertEqual(github.url, instance + "/" + repo)

@@ -71,7 +71,7 @@ class GitHub:
 
     @property
     def url(self):
-        return "https://" + self.instance + "/" + self.repository
+        return self.instance + "/" + self.repository
 
     @property
     def cloneUrl(self):
@@ -144,6 +144,8 @@ class Octokit:
     def endGroup():
         if Octokit.__EVENT__:
             print("::endgroup::")
+        else:
+            print("{:-^64}".format(""))
         Octokit.__PREFIX__ = ""
 
     @staticmethod
