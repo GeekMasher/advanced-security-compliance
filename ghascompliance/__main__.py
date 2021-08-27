@@ -110,9 +110,8 @@ if __name__ == "__main__":
                 Octokit.info(f"Loading Threat Model file from Repository: {source}")
 
                 threat_model_path = clone(
-                    source.repository,
+                    source,
                     name="threat_model",
-                    branch=source.branch,
                     token=arguments.github_token,
                 )
                 threat_model_path = os.path.join(threat_model_path, source.path)
