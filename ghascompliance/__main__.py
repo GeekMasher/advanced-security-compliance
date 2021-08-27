@@ -8,6 +8,8 @@ from ghascompliance.consts import SEVERITIES
 from ghascompliance.octokit import Octokit, GitHub
 from ghascompliance.policy import Policy
 from ghascompliance.checks import *
+from ghascompliance.reporting import __REPORTERS__
+from ghascompliance.reporting.models import Report, SecurityReport
 from ghascompliance.utils import Config, validateUri, clone
 from ghascompliance.utils.threatmodel import selectThreatModel, loadFile
 
@@ -232,25 +234,27 @@ if __name__ == "__main__":
         caching=arguments.disable_caching,
     )
 
+    security_report = Report()
+
     errors = 0
 
     try:
         if not arguments.disable_code_scanning and config.checkers.codescanning:
-            errors += checks.checkCodeScanning()
+            security_report.codescanning = checks.checkCodeScanning()
 
         if not arguments.disable_dependabot and config.checkers.dependabot:
-            errors += checks.checkDependabot()
+            security_report.dependabot = checks.checkDependabot()
 
         # Dependency Graph
         if not arguments.disable_dependencies and config.checkers.dependencies:
-            errors += checks.checkDependencies()
+            security_report.dependencies = checks.checkDependencies()
 
         # Dependency Graph Licensing
         if not arguments.disable_dependency_licensing and config.checkers.licensing:
-            errors += checks.checkDependencyLicensing()
+            security_report.licensing = checks.checkDependencyLicensing()
 
         if not arguments.disable_secret_scanning and config.checkers.secretscanning:
-            errors += checks.checkSecretScanning()
+            security_report.secretscanning = checks.checkSecretScanning()
 
     except Exception as err:
         Octokit.error("Unknown Exception was hit, please repo this to " + __url__)
@@ -259,14 +263,33 @@ if __name__ == "__main__":
         if arguments.debug:
             raise err
 
-    Octokit.info("Total unacceptable alerts :: " + str(errors))
+    reporters = config.reporting.getReports(enabled=True)
+    if len(reporters) >= 1:
+        Octokit.createGroup("Reporting")
+        for report_name, report_config in reporters.items():
+            Octokit.info(f"Reporting: {report_name}")
 
-    if arguments.action == "break" and errors > 0:
+            reporter = __REPORTERS__.get(report_name)
+
+            if callable(reporter):
+                result = reporter(
+                    config=report_config,
+                    report=security_report,
+                    github=github,
+                    global_config=config,
+                    token=arguments.github_token,
+                )
+
+        Octokit.endGroup()
+
+    Octokit.info("Total unacceptable alerts :: " + str(security_report.total))
+
+    if arguments.action == "break" and security_report.total > 0:
         Octokit.error("Unacceptable Threshold of Risk has been hit!")
         exit(1)
     elif arguments.action == "continue":
         Octokit.debug("Skipping threshold break check...")
-    elif errors == 0:
+    elif security_report.total == 0:
         Octokit.info("Acceptable risk and no threshold reached.")
     else:
         Octokit.error("Unknown action type :: " + str(arguments.action))
