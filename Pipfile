@@ -9,6 +9,7 @@ black = "==21.5b1"
 [packages]
 pyyaml = "*"
 requests = "*"
+jinja2 = "*"
 
 [requires]
 python_version = "3.9"
