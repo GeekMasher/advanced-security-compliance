@@ -148,7 +148,7 @@ if __name__ == "__main__":
         token=arguments.github_token,
     )
 
-    Octokit.info(f"GitHub Repository :: {github.repo}")
+    Octokit.info(f"GitHub Repository :: {github.repository}")
     Octokit.info(f"GitHub Instance :: {github.instance}")
 
     if arguments.list_severities:
