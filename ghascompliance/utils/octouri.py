@@ -35,6 +35,10 @@ def validateUri(uri: str) -> OctoUri:
 
         return OctoUri(f"{org}/{repo}", path, branch)
 
+    #  Relative path
+    if uri.startswith("./"):
+        return OctoUri(path=uri)
+
     #  Paths
     uri = str(Path(uri).resolve()).replace(getcwd() + "/", "")
 
