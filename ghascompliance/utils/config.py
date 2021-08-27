@@ -52,16 +52,11 @@ class GitHubConfig:
 
 
 @dataclass
-class OrganizationConfig:
-    name: str = None
-
-
-@dataclass
 class Config:
     name: str = "Configuration"
     github: GitHubConfig = GitHubConfig()
 
-    organization: OrganizationConfig = OrganizationConfig()
+    organization: bool = False
 
     policy: PolicyConfig = PolicyConfig()
 
