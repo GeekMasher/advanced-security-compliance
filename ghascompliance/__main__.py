@@ -1,5 +1,4 @@
 import os
-import json
 import argparse
 import logging
 
@@ -9,7 +8,7 @@ from ghascompliance.octokit import Octokit, GitHub
 from ghascompliance.policy import Policy
 from ghascompliance.checks import *
 from ghascompliance.reporting import __REPORTERS__
-from ghascompliance.reporting.models import Report, SecurityReport
+from ghascompliance.reporting.models import Report
 from ghascompliance.utils import Config, validateUri, clone
 from ghascompliance.utils.threatmodel import selectThreatModel, loadFile
 
