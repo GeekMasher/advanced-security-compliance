@@ -8,11 +8,12 @@ import tempfile
 sys.path.append(".")
 
 from ghascompliance.policy import Policy
+from ghascompliance.utils.octouri import OctoUri
 
 
 class TestPolicyLoading(unittest.TestCase):
     def setUp(self):
-        self.policy = Policy("error")
+        self.policy = Policy("error", uri=OctoUri())
         return super().setUp()
 
     def testNotMatchContent(self):
@@ -51,7 +52,7 @@ class TestPolicyLoading(unittest.TestCase):
         policy_path = "tests/samples/wildcards.yml"
         self.assertTrue(os.path.exists(policy_path))
 
-        policy = Policy("error", path=policy_path)
+        policy = Policy("error", OctoUri(path=policy_path))
 
         ids = policy.policy.get("licensing", {}).get("conditions", {}).get("ids")
         self.assertEqual(ids, ["*-Examples", "MyLicencing-*"])
@@ -64,7 +65,7 @@ class TestPolicyLoading(unittest.TestCase):
 
 class TestDefaultPolicyWildcards(unittest.TestCase):
     def setUp(self):
-        self.policy = Policy(path="ghascompliance/defaults/policy.yml")
+        self.policy = Policy(uri=OctoUri(path="ghascompliance/defaults/policy.yml"))
 
         return super().setUp()
 

@@ -3,25 +3,30 @@ import shutil
 import tempfile
 import subprocess
 from urllib.parse import urlparse
+from ghascompliance.utils.octouri import OctoUri
 
 
 def createGitURI(repository, instance, token):
     if token:
-        repo = "https://" + token + "@" + instance + "/" + repository
+        repo = f"https://{token}@{instance}/{repository}"
     else:
-        repo = "https://" + instance + "/" + repository
+        repo = f"https://{instance}/{repository}"
     return repo
 
 
 def clone(
-    repository, branch=None, instance="https://github.com", token=None, output=None
+    uri: OctoUri,
+    name: str = "repo",
+    instance="https://github.com",
+    token=None,
+    output=None,
 ):
     instance = urlparse(instance).netloc
 
-    repo = createGitURI(repository, instance, token)
+    repo = createGitURI(uri.repository, instance, token)
 
     if not output:
-        output = os.path.join(tempfile.gettempdir(), "repo")
+        output = os.path.join(tempfile.gettempdir(), name)
 
     if os.path.exists(output):
         # Octokit.debug("Deleting existing temp path")
@@ -31,8 +36,8 @@ def clone(
 
     cmd = ["git", "clone", "--depth=1"]
 
-    if branch:
-        cmd.extend(["-b", branch])
+    if uri.branch:
+        cmd.extend(["-b", uri.branch])
 
     cmd.extend([repo, output])
 

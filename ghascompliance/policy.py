@@ -10,6 +10,8 @@ from typing import List
 from urllib.parse import urlparse
 from ghascompliance.consts import SEVERITIES, TECHNOLOGIES, LICENSES
 from ghascompliance.octokit import Octokit
+from ghascompliance.utils.octouri import OctoUri
+from ghascompliance.utils.gitfeatures import clone
 
 __ROOT__ = os.path.dirname(os.path.basename(__file__))
 __SCHEMA_VALIDATION__ = "Schema Validation Failed :: {msg} - {value}"
@@ -23,12 +25,10 @@ class Policy:
 
     def __init__(
         self,
-        severity="error",
-        repository=None,
-        token=None,
-        path=None,
-        branch=None,
-        instance="https://github.com",
+        severity: str = "error",
+        uri: OctoUri = OctoUri(),
+        token: str = None,
+        instance: str = "https://github.com",
     ):
         self.risk_level = severity
 
@@ -39,52 +39,27 @@ class Policy:
 
         self.instance = instance
         self.token = token
-        self.branch = branch
-        self.repository = repository
-        self.repository_path = path
+
+        self.uri = uri
 
         self.temp_repo = None
 
-        if repository and repository != "":
+        if self.uri.repository and self.uri.branch:
             self.loadFromRepo()
-        elif path and path != "":
-            self.loadLocalConfig(path)
+        elif self.uri.path and self.uri.path != "":
+            self.loadLocalConfig(self.uri.path)
 
     def loadFromRepo(self):
         instance = urlparse(self.instance).netloc
-        if self.token:
-            repo = "https://" + self.token + "@" + instance + "/" + self.repository
-        else:
-            repo = "https://" + instance + "/" + self.repository
 
-        self.temp_repo = os.path.join(tempfile.gettempdir(), "repo")
+        self.temp_repo = clone(
+            self.uri,
+            name="policy",
+            instance=self.instance,
+            token=self.token,
+        )
 
-        if os.path.exists(self.temp_repo):
-            Octokit.debug("Deleting existing temp path")
-            shutil.rmtree(self.temp_repo)
-
-        Octokit.info(f"Cloning policy repo - {self.repository}")
-
-        cmd = ["git", "clone", "--depth=1"]
-
-        if self.branch:
-            cmd.extend(["-b", self.branch])
-
-        cmd.extend([repo, self.temp_repo])
-
-        Octokit.debug(f"Running command - {cmd}")
-
-        with open(os.devnull, "w") as null:
-            subprocess.run(
-                cmd,
-                stdout=null,
-                stderr=null,
-            )
-
-        if not os.path.exists(self.temp_repo):
-            raise Exception("Repository failed to clone")
-
-        full_path = os.path.join(self.temp_repo, self.repository_path)
+        full_path = os.path.join(self.temp_repo, self.uri.path)
 
         self.loadLocalConfig(full_path)
 

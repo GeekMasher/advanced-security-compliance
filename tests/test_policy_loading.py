@@ -8,6 +8,7 @@ import tempfile
 sys.path.append(".")
 
 from ghascompliance.policy import Policy
+from ghascompliance.utils.octouri import OctoUri
 
 
 class TestPolicyLoading(unittest.TestCase):
@@ -32,7 +33,7 @@ class TestPolicyLoading(unittest.TestCase):
     def testBasicLoading(self):
         self.writePolicyToFile({"general": {"level": "error"}})
 
-        policy = Policy("error", path=self.policy_file)
+        policy = Policy("error", uri=OctoUri(path=self.policy_file))
 
         self.assertEqual(policy.policy.get("general", {}).get("level"), "error")
 
@@ -40,7 +41,7 @@ class TestPolicyLoading(unittest.TestCase):
         self.writePolicyToFile({"codescanning": {"test": "error"}})
 
         with self.assertRaises(Exception) as context:
-            policy = Policy("error", path=self.policy_file)
+            policy = Policy("error", uri=OctoUri(path=self.policy_file))
 
         self.assertTrue("Schema Validation Failed" in str(context.exception))
 
@@ -48,7 +49,7 @@ class TestPolicyLoading(unittest.TestCase):
         self.writePolicyToFile({"codescanning": {"conditions": {"tests": []}}})
 
         with self.assertRaises(Exception) as context:
-            policy = Policy("error", path=self.policy_file)
+            policy = Policy("error", uri=OctoUri(path=self.policy_file))
 
         self.assertTrue("Schema Validation Failed" in str(context.exception))
 
@@ -62,7 +63,7 @@ class TestPolicyLoading(unittest.TestCase):
         with open(path, "w") as handle:
             handle.write("\n".join(data))
 
-        policy = Policy("error", path=self.policy_file)
+        policy = Policy("error", uri=OctoUri(path=self.policy_file))
 
         self.assertIsNotNone(policy.policy["codescanning"]["conditions"]["ids"])
 
@@ -74,7 +75,7 @@ class TestPolicyLoading(unittest.TestCase):
         )
 
         with self.assertRaises(Exception) as context:
-            policy = Policy("error", path=self.policy_file)
+            policy = Policy("error", uri=OctoUri(path=self.policy_file))
 
         self.assertTrue("Schema Validation Failed" in str(context.exception))
 
@@ -90,7 +91,7 @@ class TestPolicyLoading(unittest.TestCase):
         )
 
         with self.assertRaises(Exception) as context:
-            policy = Policy("error", path=self.policy_file)
+            policy = Policy("error", uri=OctoUri(path=self.policy_file))
 
         self.assertTrue("Path Traversal Detected" in str(context.exception))
 
@@ -99,7 +100,7 @@ class TestPolicyExamples(unittest.TestCase):
     def testBasic(self):
         path = "examples/policies/basic.yml"
 
-        policy = Policy("error", path=path)
+        policy = Policy("error", uri=OctoUri(path=path))
 
         self.assertEqual(policy.policy.get("codescanning", {}).get("level"), "error")
         self.assertEqual(policy.policy.get("dependabot", {}).get("level"), "high")
@@ -108,14 +109,14 @@ class TestPolicyExamples(unittest.TestCase):
     def testGeneral(self):
         path = "examples/policies/general.yml"
 
-        policy = Policy("error", path=path)
+        policy = Policy("error", uri=OctoUri(path=path))
 
         self.assertEqual(policy.policy.get("general", {}).get("level"), "error")
 
     def testConditions(self):
         path = "examples/policies/conditions.yml"
 
-        policy = Policy("error", path=path)
+        policy = Policy("error", uri=OctoUri(path=path))
 
         self.assertEqual(
             policy.policy["licensing"]["conditions"]["ids"], ["GPL-2.0", "GPL-3.0"]
@@ -134,7 +135,7 @@ class TestPolicyExamples(unittest.TestCase):
     def testAdvance(self):
         path = "examples/policies/advance.yml"
 
-        policy = Policy("error", path=path)
+        policy = Policy("error", uri=OctoUri(path=path))
 
         self.assertEqual(
             policy.policy["licensing"]["conditions"]["ids"], ["GPL-2.0", "GPL-3.0"]

@@ -4,11 +4,12 @@ import unittest
 sys.path.append(".")
 
 from ghascompliance.policy import Policy
+from ghascompliance.utils.octouri import OctoUri
 
 
 class TestPolicies(unittest.TestCase):
     def setUp(self):
-        self.policy = Policy("error")
+        self.policy = Policy("error", uri=OctoUri())
 
         self.samples = {
             "lodash": {

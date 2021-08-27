@@ -10,6 +10,7 @@ from ghascompliance.checks import *
 from ghascompliance.reporting import __REPORTERS__
 from ghascompliance.reporting.models import Report
 from ghascompliance.utils import Config, validateUri, clone
+from ghascompliance.utils.octouri import OctoUri, validateUri
 from ghascompliance.utils.threatmodel import selectThreatModel, loadFile
 
 # https://docs.github.com/en/actions/reference/environment-variables#default-environment-variables
@@ -83,7 +84,9 @@ if __name__ == "__main__":
         if config_uri.repository and config_uri.branch:
             Octokit.info("Loading config from repository...")
             config_path = clone(
-                config_uri.repository, config_uri.branch, token=arguments.github_token
+                uri=config_uri,
+                name="config",
+                token=arguments.github_token,
             )
             config_path = os.path.join(config_path, config_uri.path)
             Octokit.info(f"Loaded configuration file: {config_path}")
@@ -108,7 +111,8 @@ if __name__ == "__main__":
 
                 threat_model_path = clone(
                     source.repository,
-                    source.branch,
+                    name="threat_model",
+                    branch=source.branch,
                     token=arguments.github_token,
                 )
                 threat_model_path = os.path.join(threat_model_path, source.path)
@@ -154,7 +158,7 @@ if __name__ == "__main__":
 
         exit(0)
 
-    policy_location = None
+    policy_uri = OctoUri()
 
     Octokit.endGroup()
     Octokit.createGroup("Policy as Code")
@@ -162,45 +166,42 @@ if __name__ == "__main__":
     if arguments.github_policy and arguments.github_policy != "":
         # Process [org]/repo
         if "/" in arguments.github_policy:
-            policy_location = arguments.github_policy
+            policy_uri = validateUri(arguments.github_policy)
         else:
             if GITHUB_OWNER is None:
                 raise Exception("GitHub Owner/Repo not provided")
-            policy_location = GITHUB_OWNER + "/" + arguments.github_policy
+
+            policy_uri = validateUri(GITHUB_OWNER + "/" + arguments.github_policy)
 
         Octokit.info(
             "Loading Policy as Code from Repository - {}/{}/{}".format(
-                arguments.github_instance, policy_location, arguments.github_policy_path
+                arguments.github_instance, policy_uri, arguments.github_policy_path
             )
         )
 
     elif config.policy.repository and arguments.github_policy_path == POLICY_PATH:
-        policy_location = config.policy.repository
-        arguments.github_policy_path = config.policy.path
-
-        Octokit.info(
-            "Loading Policy as Code from Configuration - {}/{}".format(
-                config.policy.repository, config.policy.path
-            )
+        policy_uri = OctoUri(
+            repository=config.policy.repository,
+            path=config.policy.path,
+            branch=config.policy.branch,
         )
+
+        Octokit.info(f"Loading Policy as Code from Configuration - {policy_uri}")
 
     elif arguments.github_policy_path:
         if not os.path.exists(arguments.github_policy_path):
             Octokit.info("Policy config file not present on system, skipping...")
-            Octokit.info("File path skipped :: " + str(arguments.github_policy_path))
-            arguments.github_policy_path = None
+            Octokit.info(f"File path skipped :: {arguments.github_policy_path}")
         else:
-            Octokit.info(
-                "Policy config file set: {}".format(arguments.github_policy_path)
-            )
+            policy_uri = OctoUri(path=arguments.github_policy_path)
+            Octokit.info(f"Policy config file set: {policy_uri}")
 
     results = ".compliance"
 
     # Load policy engine
     policy = Policy(
         severity=arguments.severity or config.policy.severity,
-        repository=policy_location,
-        path=arguments.github_policy_path,
+        uri=policy_uri,
         token=arguments.github_token,
         instance=arguments.github_instance or config.policy.instance,
     )

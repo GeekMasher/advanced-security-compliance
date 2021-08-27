@@ -10,11 +10,12 @@ import tempfile
 sys.path.append(".")
 
 from ghascompliance.policy import Policy
+from ghascompliance.utils.octouri import OctoUri
 
 
 class TestPolicyLoading(unittest.TestCase):
     def setUp(self):
-        self.policy = Policy("error")
+        self.policy = Policy("error", uri=OctoUri())
 
         self.example = {
             "general": {"remediate": {"error": 1}},
