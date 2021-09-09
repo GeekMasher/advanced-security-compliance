@@ -2,6 +2,10 @@
 
 This Action was designed to allow users to configure their Risk threshold for security issues reported by [GitHub Code Scanning](https://docs.github.com/en/code-security/secure-coding/automatically-scanning-your-code-for-vulnerabilities-and-errors/about-code-scanning), [Secret Scanning](https://docs.github.com/en/code-security/secret-security/about-secret-scanning) and [Dependabot Security](https://docs.github.com/en/code-security/supply-chain-security/managing-vulnerabilities-in-your-projects-dependencies/configuring-dependabot-security-updates#about-configuring-dependabot-security-updates).
 
+## Capability Demonstration
+
+https://user-images.githubusercontent.com/2083085/131956624-e3f5140a-40e6-4067-9377-1093775aaa01.mp4
+
 
 ## Setup
 
