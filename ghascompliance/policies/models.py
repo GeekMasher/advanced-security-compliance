@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import Enum
 from dataclasses import dataclass, field
 from ghascompliance.octokit.dependabot import Dependencies
@@ -65,6 +66,33 @@ class BlockPolicyModels:
 
 
 @dataclass
+class RemediateModel:
+    critical: int = None
+    high: int = None
+    error: int = None
+    errors: int = None
+    medium: int = None
+    moderate: int = None
+    low: int = None
+    warning: int = None
+    warnings: int = None
+    note: int = None
+    notes: int = None
+    all: int = None
+
+    def getRemediateTime(self, severity: str):
+        severities = SeverityLevelEnum.getSeveritiesFromName(severity)
+
+        for sevr in reversed(severities):
+            val = getattr(self, sevr)
+            #  Skip if none
+            if val is None:
+                continue
+            return val
+        return None
+
+
+@dataclass
 class GeneralPolicyModel:
     #  The deault severity level that the policy will trigger on
     level: str = "error"
@@ -74,6 +102,8 @@ class GeneralPolicyModel:
     warnings: BlockPolicyModels = None
     #  Ignored
     ignores: BlockPolicyModels = None
+    # Remediate
+    remediate: RemediateModel = None
 
     def __post_init__(self):
         #  Validate level

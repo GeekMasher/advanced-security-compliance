@@ -98,3 +98,18 @@ class TestPoliciesModels(unittest.TestCase):
 
         self.assertEqual(policy.ids, ids)
         self.assertEqual(policy.names, names)
+
+    def testRemediateModel(self):
+        remediate = RemediateModel(high=1, error=15)
+
+        self.assertEqual(remediate.high, 1)
+        result = remediate.getRemediateTime("high")
+        self.assertEqual(result, 1)
+
+        self.assertEqual(remediate.error, 15)
+        result = remediate.getRemediateTime("error")
+        self.assertEqual(result, 15)
+
+        self.assertIsNone(remediate.warning)
+        result = remediate.getRemediateTime("warning")
+        self.assertEqual(result, 15)
