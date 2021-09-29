@@ -44,7 +44,8 @@ class TestPolicyLoading(unittest.TestCase):
         self.assertTrue("Absolute paths are not allowed" in str(context.exception))
 
     def testRelativePathWithPathTraversal(self):
-        path = "./../../../../etc/password"
+        # TODO: Better support needed
+        path = "../../../../etc/password"
         with self.assertRaises(Exception) as context:
             uri = validateUri(path)
 

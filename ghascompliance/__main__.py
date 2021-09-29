@@ -5,7 +5,7 @@ import logging
 from ghascompliance.__version__ import __name__ as tool_name, __banner__, __url__
 from ghascompliance.consts import SEVERITIES
 from ghascompliance.octokit import Octokit, GitHub
-from ghascompliance.policy import Policy
+from ghascompliance.policies.policy import Policy
 from ghascompliance.checks import *
 from ghascompliance.reporting import __REPORTERS__
 from ghascompliance.reporting.models import Report

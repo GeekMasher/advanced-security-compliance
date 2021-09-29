@@ -7,7 +7,7 @@ import tempfile
 
 sys.path.append(".")
 
-from ghascompliance.policy import Policy
+from ghascompliance.policies.policy import Policy
 from ghascompliance.utils.octouri import OctoUri
 
 
