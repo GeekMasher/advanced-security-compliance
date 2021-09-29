@@ -10,6 +10,7 @@ SEVERITIES = [
     "warning",
     "warnings",
     # Informational issues
+    "note",
     "notes",
 ]
 
