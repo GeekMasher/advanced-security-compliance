@@ -28,5 +28,6 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           documentation_path: ./public
+          repository_path: ./public
           install_requirements: false
           branch: gh-pages
