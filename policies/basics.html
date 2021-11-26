@@ -1,0 +1,194 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Basics &#8212; GHAS Compliance v1.5 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Base Policy" href="base-policy.html" />
+    <link rel="prev" title="Policies" href="index.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section class="tex2jax_ignore mathjax_ignore" id="basics">
+<h1>Basics<a class="headerlink" href="#basics" title="Permalink to this headline">¶</a></h1>
+<p>This document describes the overview of the Policy as Code template schema.</p>
+<section id="policy-metadata">
+<h2>Policy Metadata<a class="headerlink" href="#policy-metadata" title="Permalink to this headline">¶</a></h2>
+<p>Each policy has metadata attached to help make it easy to name and tag other metadata.</p>
+<!-- TODO add other metadata when supported -->
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># Name of the policy</span>
+<span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Default Policy</span>
+</pre></div>
+</div>
+</section>
+<section id="general-policy-blocks">
+<h2>General Policy Blocks<a class="headerlink" href="#general-policy-blocks" title="Permalink to this headline">¶</a></h2>
+<p>There are (as of v1.5) 5 different general policy blocks which dictate what policy applies to which to a particular technologies.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">codescanning</span></code> - Code Scanning policy</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dependabot</span></code> - Dependency Security Alerts (dependabot) policy</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">licensing</span></code> - Dependency Licensing Alerts (dependency graph) policy</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dependencies</span></code> - Dependency usage Alerts (dependency graph) policy</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">secretscanning</span></code> - Secret Scanning Alerts policy</p></li>
+</ul>
+<p>Each of these blocks have a <code class="docutils literal notranslate"><span class="pre">GeneralPolicyModel</span></code> used which consists of multiple parts; Severity level or Conditional.</p>
+<section id="severity-level-policy">
+<h3>Severity Level Policy<a class="headerlink" href="#severity-level-policy" title="Permalink to this headline">¶</a></h3>
+<p>The first and simplest of these is the <code class="docutils literal notranslate"><span class="pre">level</span></code> attribute which allows you to specify the severity level of a policy.
+This checks the severity of the alert and reports an policy violation if the level matches or higher</p>
+<div class="highlight-yml notranslate"><div class="highlight"><pre><span></span># Code Scanning policy setting level to error or above
+codescanning:
+  level: error
+</pre></div>
+</div>
+<p>There are a number of levels are <a class="reference external" href="https://github.com/GeekMasher/advanced-security-compliance/blob/main/ghascompliance/consts.py#L2-L15">specified in the standard and are constant</a>:</p>
+<!-- TODO: update for v2.0 -->
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">critical</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">high</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">error</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">errors</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">medium</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">moderate</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">low</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">warning</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">warnings</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">note</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">notes</span></code></p></li>
+</ul>
+</section>
+<section id="conditional-policy">
+<h3>Conditional Policy<a class="headerlink" href="#conditional-policy" title="Permalink to this headline">¶</a></h3>
+<p>The conditional policy attributes allow users to write more complex conditional checks.
+There are four main rules types to do everything you need to do for all things compliance.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">codescanning</span><span class="p">:</span>
+  <span class="c1"># Warnings will always occur if the rule applies and continues executing to </span>
+  <span class="c1">#  other rules.</span>
+  <span class="nt">warnings</span><span class="p">:</span>
+    <span class="nt">ids</span><span class="p">:</span>
+      <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">Other</span>
+      <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">NA</span>
+  <span class="c1"># Ignores are run next so if an ignored rule is hit that matches the level, </span>
+  <span class="c1">#  it will be skipped</span>
+  <span class="nt">ignores</span><span class="p">:</span>
+    <span class="nt">ids</span><span class="p">:</span>
+      <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">MIT License</span>
+  <span class="c1"># Conditions will only trigger and raise an error when an exact match is hit</span>
+  <span class="nt">conditions</span><span class="p">:</span>
+    <span class="nt">ids</span><span class="p">:</span>
+      <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">GPL-2.0</span>
+    <span class="nt">names</span><span class="p">:</span>
+      <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">tunnel-agent</span>
+
+  <span class="c1"># The simplest and ultimate rule which checks the severity of the alert and</span>
+  <span class="c1">#  reports an issue if the level matches or higher (see PaC Levels for more info)</span>
+  <span class="nt">level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">error</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/SecurityPolicy.png" alt="Logo"/>
+            </a></p>
+<h1 class="logo"><a href="../index.html">GHAS Compliance</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction/index.html">Introduction</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Policies</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Basics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="base-policy.html">Base Policy</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Policies</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Policies</a></li>
+      <li>Next: <a href="base-policy.html" title="next chapter">Base Policy</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, GeekMasher.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.3.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/policies/basics.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
