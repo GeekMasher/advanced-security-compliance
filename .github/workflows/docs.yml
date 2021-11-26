@@ -24,10 +24,7 @@ jobs:
           sphinx-build -b html docs/ ./public
 
       - name: Publish
-        uses: ad-m/github-push-action@master
+        uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          documentation_path: ./public
-          repository_path: ./public
-          install_requirements: false
-          branch: gh-pages
+          publish_dir: ./public
