@@ -21,7 +21,7 @@ jobs:
 
       - name: Build docs
         run: |
-          pipenv run sphinx-build -b html docs/ ./public
+          sphinx-build -b html docs/ ./public
 
       - name: Publish
         uses: peaceiris/actions-gh-pages@v3
