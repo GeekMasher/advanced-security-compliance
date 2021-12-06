@@ -93,10 +93,13 @@ class Octokit:
 
     @staticmethod
     def info(msg):
+        """Logging Info"""
         logging.info(msg)
         print(msg)
 
+    @staticmethod
     def debug(msg):
+        """Logging Debugging"""
         logging.debug(msg)
         if Octokit.logger.level == logging.DEBUG and Octokit.__EVENT__:
             print("::debug :: {msg}".format(msg=msg))
@@ -105,6 +108,7 @@ class Octokit:
 
     @staticmethod
     def warning(msg):
+        """Logging Warning"""
         prepfix = (
             Octokit.__PREFIX_WARNING__ + " :: " if Octokit.__PREFIX_WARNING__ else ""
         )
@@ -116,6 +120,7 @@ class Octokit:
 
     @staticmethod
     def error(msg, file=None, line=0, col=0):
+        """Logging Error"""
         Octokit.__ERRORS__.append(msg)
         logging.error(msg)
 
@@ -133,6 +138,7 @@ class Octokit:
 
     @staticmethod
     def createGroup(name, warning_prepfix=None):
+        """Create Logging Group (for Actions)"""
         Octokit.__PREFIX_WARNING__ = warning_prepfix
 
         if Octokit.__EVENT__:
@@ -142,13 +148,14 @@ class Octokit:
 
     @staticmethod
     def endGroup():
+        """End Logging Group (for Actions)"""
         if Octokit.__EVENT__:
             print("::endgroup::")
         Octokit.__PREFIX__ = ""
 
     @staticmethod
     def setOutput(key, value):
-
+        """Set Actions Output"""
         if Octokit.__EVENT__:
             print("::set-output name={}::{}".format(key, value))
         else:
@@ -159,6 +166,7 @@ class Octokit:
 
     @staticmethod
     def loadEvents(path: str):
+        """Loading Action Event"""
         Octokit.debug("Loading event: " + str(path))
         event = {}
 
