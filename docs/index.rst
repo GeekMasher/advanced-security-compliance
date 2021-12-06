@@ -20,5 +20,6 @@ User's Guide
    :maxdepth: 2
 
    introduction/index
-   samples/index
    policies/index
+   samples/index
+   api-reference/index
