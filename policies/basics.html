@@ -15,7 +15,6 @@
     <script src="../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Base Policy" href="base-policy.html" />
     <link rel="prev" title="Policies" href="index.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
@@ -60,9 +59,9 @@
 <h3>Severity Level Policy<a class="headerlink" href="#severity-level-policy" title="Permalink to this headline">¶</a></h3>
 <p>The first and simplest of these is the <code class="docutils literal notranslate"><span class="pre">level</span></code> attribute which allows you to specify the severity level of a policy.
 This checks the severity of the alert and reports an policy violation if the level matches or higher</p>
-<div class="highlight-yml notranslate"><div class="highlight"><pre><span></span># Code Scanning policy setting level to error or above
-codescanning:
-  level: error
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># Code Scanning policy setting level to error or above</span>
+<span class="nt">codescanning</span><span class="p">:</span>
+  <span class="nt">level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">error</span>
 </pre></div>
 </div>
 <p>There are a number of levels are <a class="reference external" href="https://github.com/GeekMasher/advanced-security-compliance/blob/main/ghascompliance/consts.py#L2-L15">specified in the standard and are constant</a>:</p>
@@ -135,9 +134,9 @@ There are four main rules types to do everything you need to do for all things c
 <h3>Navigation</h3>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../introduction/index.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../samples/index.html">Samples</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Policies</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Basics</a></li>
-<li class="toctree-l2"><a class="reference internal" href="base-policy.html">Base Policy</a></li>
 </ul>
 </li>
 </ul>
@@ -148,7 +147,6 @@ There are four main rules types to do everything you need to do for all things c
   <li><a href="../index.html">Documentation overview</a><ul>
   <li><a href="index.html">Policies</a><ul>
       <li>Previous: <a href="index.html" title="previous chapter">Policies</a></li>
-      <li>Next: <a href="base-policy.html" title="next chapter">Base Policy</a></li>
   </ul></li>
   </ul></li>
 </ul>

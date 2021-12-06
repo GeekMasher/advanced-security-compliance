@@ -7,4 +7,3 @@ This is all things Policy as Code.
    :maxdepth: 1
 
    basics
-   base-policy

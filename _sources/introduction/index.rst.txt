@@ -8,3 +8,4 @@ Introduction to GitHub Advanced Security Compliance
 
    actions
    cli
+   authentication-permissions

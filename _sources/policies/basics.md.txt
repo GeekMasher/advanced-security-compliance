@@ -29,7 +29,7 @@ Each of these blocks have a `GeneralPolicyModel` used which consists of multiple
 The first and simplest of these is the `level` attribute which allows you to specify the severity level of a policy.
 This checks the severity of the alert and reports an policy violation if the level matches or higher
 
-```yml
+```yaml
 # Code Scanning policy setting level to error or above
 codescanning:
   level: error
