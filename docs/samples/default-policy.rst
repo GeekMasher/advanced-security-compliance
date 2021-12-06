@@ -1,5 +1,5 @@
-Base Policy
-------------
+Default Policy
+--------------
 
 The simplest way to use GHASCompliance is to use the `Default Policy`_.
 
@@ -37,8 +37,6 @@ The simplest way to use GHASCompliance is to use the `Default Policy`_.
   # Secret Scanning Alerts policyS
   secretscanning:
     level: all
-
-
 
 
 .. _Default Policy: https://github.com/GeekMasher/advanced-security-compliance/blob/main/ghascompliance/defaults/policy.yml
