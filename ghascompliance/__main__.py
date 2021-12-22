@@ -85,7 +85,6 @@ if __name__ == "__main__":
         instance=arguments.github_instance,
         token=arguments.github_token,
     )
-    print(github)
 
     Octokit.info(f"GitHub Repository :: {github.repo}")
     Octokit.info(f"GitHub Instance :: {github.instance}")

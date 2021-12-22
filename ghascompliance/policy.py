@@ -91,7 +91,6 @@ class Policy:
             raise Exception("Repository failed to clone")
 
         full_path = os.path.join(self.temp_repo, self.repository_path)
-        print(full_path)
 
         self.loadLocalConfig(full_path)
 
