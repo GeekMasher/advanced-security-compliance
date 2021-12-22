@@ -30,7 +30,8 @@ parser.add_argument("--disable-code-scanning", action="store_true")
 parser.add_argument("--disable-dependabot", action="store_true")
 parser.add_argument("--disable-dependency-licensing", action="store_true")
 parser.add_argument("--disable-dependencies", action="store_true")
-parser.add_argument("--disable-secret-scanning", action="store_true")
+parser.add_argument("--disable-secret-scanning", action="store_true")   
+parser.add_argument("--is-github-app-token", action="store_true", default=False)
 
 github_arguments = parser.add_argument_group("GitHub")
 github_arguments.add_argument("--github-token", default=GITHUB_TOKEN)
@@ -84,6 +85,7 @@ if __name__ == "__main__":
         instance=arguments.github_instance,
         token=arguments.github_token,
     )
+    print(github)
 
     Octokit.info(f"GitHub Repository :: {github.repo}")
     Octokit.info(f"GitHub Instance :: {github.instance}")
@@ -128,7 +130,9 @@ if __name__ == "__main__":
         severity=arguments.severity,
         repository=policy_location,
         path=arguments.github_policy_path,
+        branch=arguments.github_policy_branch,
         token=arguments.github_token,
+        isGithubAppToken=arguments.is_github_app_token,
         instance=arguments.github_instance,
     )
 
