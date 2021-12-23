@@ -16,5 +16,8 @@ python_version = "3.9"
 
 [scripts]
 main = "python -m ghascompliance"
-tests = ""
+tests = "python3 -m unittest discover -s \"tests\" -p \"test_*.py\""
 format = "black ."
+
+[pipenv]
+allow_prereleases = true
