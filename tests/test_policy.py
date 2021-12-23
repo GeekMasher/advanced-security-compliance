@@ -3,13 +3,77 @@ import unittest
 
 sys.path.append(".")
 
-from ghascompliance.policy import Policy
+from ghascompliance.policies.policy import Policy
 from ghascompliance.utils.octouri import OctoUri
+
+
+class TestPoliciesViolations(unittest.TestCase):
+    def testCodeScanningAlertBasic(self):
+        policy = {
+            "codescanning": {"level": "error"},
+        }
+        engine = Policy()
+        engine.policy = engine.loadPolicy(policy)
+
+        result = engine.checkViolation(
+            "high", "codescanning", names=[], ids=[], creation_time=None
+        )
+        self.assertTrue(result)
+
+        result = engine.checkViolation(
+            "low", "codescanning", names=[], ids=[], creation_time=None
+        )
+        self.assertFalse(result)
+
+    def testCodeScanningAlertBasicNames(self):
+        policy = {
+            "codescanning": {"level": "error", "conditions": {"names": ["test"]}},
+        }
+        engine = Policy()
+        engine.policy = engine.loadPolicy(policy)
+
+        result = engine.checkViolation(
+            "low", "codescanning", names=["test"], ids=[], creation_time=None
+        )
+        self.assertTrue(result)
+
+        result = engine.checkViolation(
+            "low", "codescanning", names=["example"], ids=[], creation_time=None
+        )
+        self.assertFalse(result)
+
+    def testCodeScanningAlertBasicNames(self):
+        policy = {
+            "codescanning": {
+                "level": "error",
+                "conditions": {"ids": ["codescanning/id/42"]},
+            },
+        }
+        engine = Policy()
+        engine.policy = engine.loadPolicy(policy)
+
+        result = engine.checkViolation(
+            "low",
+            "codescanning",
+            names=[],
+            ids=["codescanning/id/42"],
+            creation_time=None,
+        )
+        self.assertTrue(result)
+
+        result = engine.checkViolation(
+            "low",
+            "codescanning",
+            names=[],
+            ids=["codescanning/id/64"],
+            creation_time=None,
+        )
+        self.assertFalse(result)
 
 
 class TestPolicies(unittest.TestCase):
     def setUp(self):
-        self.policy = Policy("error", uri=OctoUri())
+        self.engine = Policy()
 
         self.samples = {
             "lodash": {
@@ -25,7 +89,7 @@ class TestPolicies(unittest.TestCase):
                 "license": "MIT License",
             },
             "mygpl": {
-                "name": "faker",
+                "name": "mygpl",
                 "full_name": "npm://mygpl",
                 "manager": "NPM",
                 "license": "GPL-2.0",
@@ -37,94 +101,93 @@ class TestPolicies(unittest.TestCase):
     def testLicenseByName(self):
         mygpl = self.samples.get("mygpl")
 
-        self.assertTrue(self.policy.checkLicensingViolation(mygpl["license"], mygpl))
+        self.assertTrue(self.engine.checkLicensingViolation(mygpl["license"], mygpl))
 
     def testLicenseByDepLicense(self):
         faker = self.samples.get("faker")
+        # load policy
+        example = {"licensing": {"conditions": {"ids": [faker.get("license")]}}}
+        self.engine.policy = self.engine.loadPolicy(example)
 
-        self.policy.policy = {
-            "licensing": {"conditions": {"ids": [faker.get("license")]}}
-        }
-
-        self.assertEqual(
-            self.policy.policy.get("licensing", {}).get("conditions", {}).get("ids"),
-            [faker.get("license")],
-        )
-
+        # lowercase
+        self.assertEqual(self.engine.policy.licensing.conditions.ids, ["mit license"])
         self.assertTrue(
-            self.policy.checkLicensingViolationAgainstPolicy(faker["license"], faker)
+            self.engine.checkLicensingViolationAgainstPolicy(faker["license"], faker)
         )
 
     def testLicenseByDependencyFullNames(self):
         faker = self.samples.get("faker")
-
-        self.policy.policy = {
-            "licensing": {"conditions": {"names": [faker.get("full_name")]}}
-        }
+        # load policy
+        example = {"licensing": {"conditions": {"names": [faker.get("full_name")]}}}
+        self.engine.policy = self.engine.loadPolicy(example)
 
         self.assertEqual(
-            self.policy.policy.get("licensing", {}).get("conditions", {}).get("names"),
-            [faker.get("full_name")],
+            self.engine.policy.licensing.conditions.names, [faker.get("full_name")]
         )
 
         #  Full name check
         self.assertTrue(
-            self.policy.checkLicensingViolationAgainstPolicy(faker["license"], faker)
+            self.engine.checkLicensingViolationAgainstPolicy(faker["license"], faker)
         )
 
     def testLicenseByDependencyShortNames(self):
         faker = self.samples.get("faker")
-
-        self.policy.policy = {
-            "licensing": {"conditions": {"names": [faker.get("name")]}}
-        }
+        # load policy
+        example = {"licensing": {"conditions": {"names": [faker.get("name")]}}}
+        self.engine.policy = self.engine.loadPolicy(example)
 
         self.assertEqual(
-            self.policy.policy.get("licensing", {}).get("conditions", {}).get("names"),
+            self.engine.policy.licensing.conditions.names,
             [faker.get("name")],
         )
 
         # Short name check
         self.assertTrue(
-            self.policy.checkLicensingViolationAgainstPolicy(faker["license"], faker)
+            self.engine.checkLicensingViolationAgainstPolicy(faker["license"], faker)
         )
 
     def testDependencyNamesDoNotMatch(self):
-        self.policy.policy = {
+        # load policy
+        example = {
             "dependencies": {
                 "conditions": {"names": ["maven://org.apache.commons:commons-exec"]}
             }
         }
+        self.engine.policy = self.engine.loadPolicy(example)
 
         #  Long and Short names
         names = ["maven://org.test.package", "org.test.package"]
 
-        self.assertFalse(self.policy.checkViolation("all", "dependencies", names=names))
+        self.assertFalse(self.engine.checkViolation("all", "dependencies", names=names))
 
     def testDependencyFullNamesMatch(self):
         name = "maven://com.geekmasher.test#1.0.0"
-        self.policy.policy = {"dependencies": {"conditions": {"names": [name]}}}
+        # load policy
+        example = {"dependencies": {"conditions": {"names": [name]}}}
+        self.engine.policy = self.engine.loadPolicy(example)
 
         names = ["maven://com.geekmasher.test", name]
 
-        self.assertTrue(self.policy.checkViolation("all", "dependencies", names=names))
+        self.assertTrue(self.engine.checkViolation("all", "dependencies", names=names))
 
     def testDependencyNamesDoMatch(self):
-        self.policy.policy = {
+        # load policy
+        example = {
             "dependencies": {"conditions": {"names": ["maven://org.test.package"]}}
         }
+        self.engine.policy = self.engine.loadPolicy(example)
 
         #  Long and Short names
         names = ["maven://org.test.package", "org.test.package"]
 
-        self.assertTrue(self.policy.checkViolation("all", "dependencies", names=names))
+        self.assertTrue(self.engine.checkViolation("all", "dependencies", names=names))
 
     def testDependencyManager(self):
-        self.policy.policy = {
-            "dependencies": {"conditions": {"names": ["npm://faker"]}}
-        }
+        # load policy
+        example = {"dependencies": {"conditions": {"names": ["npm://faker"]}}}
+        self.engine.policy = self.engine.loadPolicy(example)
 
         #  Long and Short names
         names = ["pip://faker", "faker"]
 
-        self.assertFalse(self.policy.checkViolation("all", "dependencies", names=names))
+        self.assertFalse(self.engine.checkViolation("all", "dependencies", names=names))

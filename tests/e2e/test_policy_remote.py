@@ -13,6 +13,7 @@ from ghascompliance.utils.octouri import OctoUri
 class TestPolicyLoadingRemote(unittest.TestCase):
     def setUp(self):
         self.policy: Policy = None
+
         return super().setUp()
 
     def tearDown(self):
@@ -29,7 +30,7 @@ class TestPolicyLoadingRemote(unittest.TestCase):
             uri=OctoUri(
                 repository="GeekMasher/advanced-security-compliance",
                 path="examples/policies/test-policy.yml",
-                branch="testing",
+                branch="main",
             ),
             token=os.environ.get("GITHUB_TOKEN"),
         )

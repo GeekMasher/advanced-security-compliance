@@ -43,6 +43,12 @@ class TestPolicyLoading(unittest.TestCase):
 
         self.assertTrue("Absolute paths are not allowed" in str(context.exception))
 
+    def testPathWithoutRelativePath(self):
+        path = "policies/default.yml"
+        uri = validateUri(path)
+        # because there is a file extension, it is assumed to be a relative path
+        self.assertEqual(uri.path, path)
+
     def testRelativePathWithPathTraversal(self):
         # TODO: Better support needed
         path = "../../../../etc/password"

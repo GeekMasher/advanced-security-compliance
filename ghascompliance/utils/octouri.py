@@ -45,8 +45,8 @@ def validateUri(uri: str) -> OctoUri:
     #  Absolute paths
     if uri.startswith("/"):
         raise Exception(f"Absolute paths are not allowed: {uri}")
-    #  Repo based path
-    elif uri.count("/") == 1:
+    #  Repo based path (check if extension present)
+    elif uri.count("/") == 1 and "." not in uri:
         return OctoUri(repository=uri)
-
+    #  Path based path
     return OctoUri(path=uri)

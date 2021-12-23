@@ -1,6 +1,7 @@
+
 import os
 import json
-from sys import prefix
+from sys import prefix, modules
 import yaml
 import logging
 import requests
@@ -88,13 +89,15 @@ class Octokit:
     __ERRORS__ = []
     __EVENT__ = None
     __PREFIX_WARNING__ = ""
+    __TESTING__ = "unittest" in modules.keys()
 
     logger = logging.getLogger(__name__)
 
     @staticmethod
     def info(msg):
-        logging.info(msg)
-        print(msg)
+        if not Octokit.__TESTING__:
+            logging.info(msg)
+            print(msg)
 
     def debug(msg):
         logging.debug(msg)

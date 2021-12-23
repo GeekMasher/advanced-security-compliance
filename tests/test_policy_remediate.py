@@ -1,11 +1,6 @@
-import os
 import sys
-import yaml
-import uuid
 import datetime
 import unittest
-
-import tempfile
 
 sys.path.append(".")
 
@@ -14,107 +9,122 @@ from ghascompliance.utils.octouri import OctoUri
 
 
 class TestPolicyLoading(unittest.TestCase):
-    def setUp(self):
-        self.policy = Policy("error", uri=OctoUri())
-
-        self.example = {
+    def testLoadingGeneral(self):
+        example = {
             "general": {"remediate": {"error": 1}},
             "codescanning": {"level": "error"},
         }
+        engine = Policy()
+        engine.policy = engine.loadPolicy(example)
 
-        return super().setUp()
-
-    def testLoadingGeneral(self):
-
-        self.policy.loadPolicy(self.example)
-
-        self.assertIsNotNone(self.policy.remediate)
-        self.assertEqual(self.policy.remediate, self.example["general"]["remediate"])
-
-        self.assertEqual(
-            self.policy.policy.get("codescanning", {}).get("remediate"),
-            self.policy.remediate,
-        )
+        self.assertIsNotNone(engine.policy.general.remediate)
+        self.assertEqual(engine.policy.general.level, "none")
+        self.assertTrue(engine.policy.general.remediate.enabled)
+        self.assertEqual(engine.policy.general.remediate.error, 1)
+        # Inherits from general
+        self.assertIsNotNone(engine.policy.codescanning.remediate)
+        self.assertTrue(engine.policy.codescanning.remediate.enabled)
+        self.assertEqual(engine.policy.codescanning.level, "error")
+        self.assertEqual(engine.policy.codescanning.remediate.error, 1)
+        # Inherits from general
+        self.assertIsNotNone(engine.policy.secretscanning.remediate)
+        self.assertTrue(engine.policy.secretscanning.remediate.enabled)
+        self.assertEqual(engine.policy.secretscanning.remediate.error, 1)
 
     def testOverwritingPolicies(self):
-        my_policy = {
+        policy = {
             "general": {"remediate": {"error": 1}},
             "codescanning": {"level": "error"},
             "dependabot": {"level": "high", "remediate": {"high": 7}},
         }
-        self.policy.loadPolicy(my_policy)
+        engine = Policy()
+        engine.policy = engine.loadPolicy(policy)
 
-        self.assertEqual(
-            self.policy.policy.get("dependabot", {}).get("remediate"),
-            my_policy.get("dependabot", {}).get("remediate"),
-        )
+        self.assertTrue(engine.policy.codescanning.enabled)
+        self.assertEqual(engine.policy.codescanning.level, "error")
+        self.assertEqual(engine.policy.codescanning.remediate.error, 1)
 
-        self.assertEqual(
-            self.policy.policy.get("dependabot", {}).get("remediate", {}).get("high"), 7
-        )
+        self.assertTrue(engine.policy.dependabot.enabled)
+        self.assertEqual(engine.policy.dependabot.level, "high")
+        self.assertIsNone(engine.policy.dependabot.remediate.error)
+        self.assertEqual(engine.policy.dependabot.remediate.high, 7)
 
     def testViolationRemediationYesterday(self):
         yesterday = datetime.datetime.now() - datetime.timedelta(days=2)
+        policy = {"codescanning": {"level": "error", "remediate": {"error": 1}}}
+        engine = Policy()
+        engine.policy = engine.loadPolicy(policy)
 
-        self.policy.loadPolicy(self.example)
+        self.assertIsNotNone(engine.policy.codescanning.remediate)
+        self.assertEqual(engine.policy.codescanning.remediate.error, 1)
 
-        result = self.policy.checkViolationRemediation(
-            "error", self.example.get("codescanning", {}).get("remediate"), yesterday
+        result = engine.checkViolationRemediation(
+            "error", engine.policy.codescanning.remediate, yesterday
         )
         self.assertTrue(result)
 
     def testViolationRemediationToday(self):
         today = datetime.datetime.now()
+        policy = {"codescanning": {"level": "error", "remediate": {"error": 1}}}
+        engine = Policy()
+        engine.policy = engine.loadPolicy(policy)
 
-        self.policy.loadPolicy(self.example)
+        self.assertIsNotNone(engine.policy.codescanning.remediate)
+        self.assertEqual(engine.policy.codescanning.remediate.error, 1)
 
-        result = self.policy.checkViolationRemediation(
-            "error", self.example.get("codescanning", {}).get("remediate"), today
+        result = engine.checkViolationRemediation(
+            "error", engine.policy.codescanning.remediate, today
         )
         self.assertFalse(result)
+
+    def testViolationRemediationTodayZeroDays(self):
+        today = datetime.datetime.now()
+        policy = {"codescanning": {"level": "error", "remediate": {"error": 0}}}
+        engine = Policy()
+        engine.policy = engine.loadPolicy(policy)
+
+        self.assertIsNotNone(engine.policy.codescanning.remediate)
+        self.assertEqual(engine.policy.codescanning.remediate.error, 0)
+
+        result = engine.checkViolationRemediation(
+            "error", engine.policy.codescanning.remediate, today
+        )
+        self.assertTrue(result)
 
     def testViolationRemediationTomorrow(self):
         tomorrow = datetime.datetime.now() + datetime.timedelta(days=1)
+        policy = {"codescanning": {"level": "error", "remediate": {"error": 1}}}
+        engine = Policy()
+        engine.policy = engine.loadPolicy(policy)
 
-        self.policy.loadPolicy(self.example)
-
-        result = self.policy.checkViolationRemediation(
-            "error", self.example.get("codescanning", {}).get("remediate"), tomorrow
+        result = engine.checkViolationRemediation(
+            "error", engine.policy.codescanning.remediate, tomorrow
         )
         self.assertFalse(result)
 
-    def testUnknownUnspecifiedSeverity(self):
-        sevendaysago = datetime.datetime.now() + datetime.timedelta(days=7)
-
-        self.policy.loadPolicy(self.example)
-
-        result = self.policy.checkViolationRemediation(
-            "critical",
-            self.example.get("codescanning", {}).get("remediate"),
-            sevendaysago,
-        )
-        self.assertFalse(result)
-
-    def testUnknownUnspecifiedSeverity(self):
+    def testUnknownUnspecifiedHighSeverity(self):
         sevendaysago = datetime.datetime.now() - datetime.timedelta(days=7)
+        policy = {"codescanning": {"level": "error", "remediate": {"error": 1}}}
+        engine = Policy()
+        engine.policy = engine.loadPolicy(policy)
 
-        self.policy.loadPolicy(self.example)
-
-        result = self.policy.checkViolationRemediation(
-            "warning",
-            self.example.get("codescanning", {}).get("remediate"),
-            sevendaysago,
-        )
-        self.assertFalse(result)
-
-    def testUnspecifiedSeverity(self):
-        sevendaysago = datetime.datetime.now() - datetime.timedelta(days=7)
-
-        self.policy.loadPolicy(self.example)
-
-        result = self.policy.checkViolationRemediation(
+        result = engine.checkViolationRemediation(
             "critical",
-            self.example.get("codescanning", {}).get("remediate"),
+            engine.policy.codescanning.remediate,
             sevendaysago,
         )
+        # Because error is set, this should be true
         self.assertTrue(result)
+
+    def testUnknownUnspecifiedLowSeverity(self):
+        sevendaysago = datetime.datetime.now() - datetime.timedelta(days=7)
+        policy = {"codescanning": {"level": "error", "remediate": {"error": 1}}}
+        engine = Policy()
+        engine.policy = engine.loadPolicy(policy)
+
+        result = engine.checkViolationRemediation(
+            "warning",
+            engine.policy.codescanning.remediate,
+            sevendaysago,
+        )
+        self.assertFalse(result)

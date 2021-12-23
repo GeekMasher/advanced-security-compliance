@@ -1,48 +1,53 @@
 import os
 import json
 import yaml
-import shutil
 import fnmatch
 import datetime
 import tempfile
-import subprocess
+from dataclasses import asdict
 from typing import List
 from urllib.parse import urlparse
-from ghascompliance.consts import SEVERITIES, TECHNOLOGIES, LICENSES
+from ghascompliance.consts import TECHNOLOGIES, LICENSES
 from ghascompliance.octokit import Octokit
-from ghascompliance.utils.octouri import OctoUri
+from ghascompliance.utils.octouri import OctoUri, validateUri
+from ghascompliance.utils.dataclasses import _dataclass_from_dict
 from ghascompliance.utils.gitfeatures import clone
+from ghascompliance.utils.config import Paths
+from ghascompliance.policies.models import (
+    PolicyModel,
+    GeneralPolicyModel,
+    RemediateModel,
+    SeverityLevelEnum,
+)
 
 __ROOT__ = os.path.dirname(os.path.basename(__file__))
 __SCHEMA_VALIDATION__ = "Schema Validation Failed :: {msg} - {value}"
 
 
 class Policy:
-
-    __BLOCK_ITEMS__ = ["ids", "names", "imports", "remediate"]
-    __SECTION_ITEMS__ = ["level", "remediate", "conditions", "warnings", "ignores"]
-    __IMPORT_ALLOWED_TYPES__ = ["txt"]
-
     def __init__(
         self,
-        severity: str = "error",
+        severity: str = "none",
         uri: OctoUri = OctoUri(),
         token: str = None,
         instance: str = "https://github.com",
     ):
         self.risk_level = severity
+        self.severities = SeverityLevelEnum.getSeveritiesFromName(severity)
 
-        self.severities = self._buildSeverityList(severity)
-
-        self.policy = {}
-        self.remediate = None
+        #  Setup default model
+        self.policy: PolicyModel = PolicyModel()
+        if severity:
+            # By default the policy is set to none so that this feature is
+            # disabled unless its alligned with the severity level
+            self.policy.general = GeneralPolicyModel(level=severity)
 
         self.instance = instance
         self.token = token
 
+        if not isinstance(uri, OctoUri):
+            uri = validateUri(uri)
         self.uri = uri
-
-        self.temp_repo = None
 
         if self.uri.repository and self.uri.branch:
             self.loadFromRepo()
@@ -52,7 +57,7 @@ class Policy:
     def loadFromRepo(self):
         instance = urlparse(self.instance).netloc
 
-        self.temp_repo = clone(
+        Paths.policy_repository = clone(
             self.uri,
             name="policy",
             instance=self.instance,
@@ -72,135 +77,12 @@ class Policy:
         with open(path, "r") as handle:
             policy = yaml.safe_load(handle)
 
-        self.loadPolicy(policy)
+        self.policy = self.loadPolicy(policy)
 
     def loadPolicy(self, policy: dict):
-
-        if not policy.get("general"):
-            policy["general"] = {}
-
-        general = policy.get("general")
-
-        # set 'general' to the current minimum
-        if not general.get("level"):
-            policy["general"]["level"] = self.risk_level.lower()
-
-        if general.get("remediate"):
-            self.remediate = general.get("remediate")
-            policy["general"]["remediate"] = self.remediate
-
-        for tech in TECHNOLOGIES:
-            # Importing files
-            policy[tech] = self.loadPolicySection(
-                tech, policy.get(tech, policy["general"])
-            )
-
+        model: PolicyModel = _dataclass_from_dict(PolicyModel, policy)
         Octokit.info("Policy loaded successfully")
-
-        self.policy = policy
-
-    def loadPolicySection(self, name: str, data: dict):
-
-        time_to_remediate_policy = False
-
-        for section, section_data in data.items():
-            # check if only certain sections are present
-            if section not in Policy.__SECTION_ITEMS__:
-                raise Exception(
-                    __SCHEMA_VALIDATION__.format(
-                        msg="Disallowed Section present", value=section
-                    )
-                )
-
-            # Skip level
-            if section == "level" and isinstance(section_data, str):
-                continue
-
-            # Time to Remediate
-            if section == "remediate":
-                Octokit.debug("Enabling Time to Remediate (section) :: " + name)
-                time_to_remediate_policy = True
-                continue
-
-            # Validate blocks
-            for block in list(section_data):
-                if block not in Policy.__BLOCK_ITEMS__:
-                    raise Exception(
-                        __SCHEMA_VALIDATION__.format(
-                            msg="Disallowed Block present", value=block
-                        )
-                    )
-
-            # Importing
-            if section_data.get("imports"):
-                if section_data.get("imports", {}).get("imports"):
-                    raise Exception(
-                        __SCHEMA_VALIDATION__.format(
-                            msg="Circular import", value="imports"
-                        )
-                    )
-
-                for block in Policy.__BLOCK_ITEMS__:
-
-                    Octokit.debug(f"Importing > {section} - {block}")
-
-                    import_path = section_data.get("imports", {}).get(block)
-                    if import_path and isinstance(import_path, str):
-                        if section_data.get(block):
-                            section_data[block].extend(
-                                self.loadPolicyImport(import_path)
-                            )
-                        else:
-                            section_data[block] = self.loadPolicyImport(import_path)
-
-        if not time_to_remediate_policy and self.remediate:
-            Octokit.info("Enabling Time to Remediate (global) :: " + name)
-            data["remediate"] = self.remediate
-
-        return data
-
-    def loadPolicyImport(self, path: str):
-        results = []
-        traversal = False
-        paths = [
-            # Current Working Dir
-            (os.getcwd(), path),
-            # Temp Repo / Cloned Repo
-            (str(self.temp_repo), path),
-            # Action / CLI directory
-            (__ROOT__, path),
-        ]
-        for root, path in paths:
-            full_path = os.path.abspath(os.path.join(root, path))
-
-            if os.path.exists(full_path) and os.path.isfile(full_path):
-                if full_path.startswith(tempfile.gettempdir()):
-                    Octokit.debug("Temp location used for import path")
-                elif not full_path.startswith(root):
-                    Octokit.error("Attempting to import file :: " + full_path)
-                    raise Exception("Path Traversal Detected, halting import!")
-
-                # TODO: MIME type checking?
-                _, fileext = os.path.splitext(full_path)
-                fileext = fileext.replace(".", "")
-
-                if fileext not in Policy.__IMPORT_ALLOWED_TYPES__:
-                    Octokit.warning(
-                        "Trying to load a disallowed file type :: " + fileext
-                    )
-                    continue
-
-                Octokit.info("Importing Path :: " + full_path)
-
-                with open(full_path, "r") as handle:
-                    for line in handle:
-                        line = line.replace("\n", "").replace("\b", "")
-                        if line == "" or line.startswith("#"):
-                            continue
-                        results.append(line)
-
-                break
-        return results
+        return model
 
     def savePolicy(self, path: str):
         #  Always clear the file
@@ -208,28 +90,8 @@ class Policy:
         if os.path.exists(path):
             os.remove(path)
         with open(path, "w") as handle:
-            json.dump(self.policy, handle, indent=2)
+            json.dump(asdict(self.policy), handle, indent=2)
         Octokit.info("Policy saved")
-
-    def _buildSeverityList(self, severity: str):
-        if not severity:
-            raise Exception("`security` is set to None/Null")
-
-        severity = severity.lower()
-        severities = []
-
-        if severity == "none":
-            Octokit.debug("No Unacceptable Severities")
-            return []
-        elif severity == "all":
-            Octokit.debug("Unacceptable Severities :: " + ",".join(SEVERITIES))
-            return SEVERITIES
-        elif severity in SEVERITIES:
-            severities = SEVERITIES[: SEVERITIES.index(severity) + 1]
-            Octokit.debug("Unacceptable Severities :: " + ",".join(severities))
-        else:
-            Octokit.warning(f"Unknown severity provided :: {severity}")
-        return severities
 
     def matchContent(self, name: str, validators: List[str]):
         # Wildcard matching
@@ -242,30 +104,19 @@ class Policy:
     def checkViolationRemediation(
         self,
         severity: str,
-        remediate: dict,
+        remediate: RemediateModel,
         creation_time: datetime.datetime,
     ):
         # Midnight "today"
         now = datetime.datetime.now().date()
 
-        if creation_time and remediate.get(severity):
-            alert_datetime = creation_time + datetime.timedelta(
-                days=int(remediate.get(severity))
-            )
-            if now > alert_datetime.date():
+        remediate_time = remediate.getRemediateTime(severity)
+        if creation_time and remediate_time is not None:
+            alert_datetime = creation_time + datetime.timedelta(days=remediate_time)
+            if now >= alert_datetime.date():
                 return True
-
         else:
-            for remediate_severity, remediate_delta in remediate.items():
-                remediate_severity_list = self._buildSeverityList(remediate_severity)
-
-                if severity in remediate_severity_list:
-                    alert_datetime = creation_time + datetime.timedelta(
-                        days=int(remediate_delta)
-                    )
-                    if now > alert_datetime.date():
-                        return True
-
+            Octokit.debug("Remediation time not found")
         return False
 
     def checkViolation(
@@ -281,82 +132,70 @@ class Policy:
         if not technology or technology == "":
             raise Exception("Technology is set to None")
 
-        if self.policy.get(technology, {}).get("remediate"):
+        policy = self.policy.getPolicy(technology)
+
+        if policy.remediate:
             Octokit.debug("Checking violation against remediate configuration")
 
-            remediate_policy = self.policy.get(technology, {}).get("remediate")
-
             violation_remediation = self.checkViolationRemediation(
-                severity, remediate_policy, creation_time
+                severity, policy.remediate, creation_time
             )
-            if self.policy.get(technology, {}).get("level"):
+            if policy.level:
                 return violation_remediation and self.checkViolationAgainstPolicy(
-                    severity, technology, names=names, ids=ids
+                    severity, policy, names=names, ids=ids
                 )
             else:
                 return violation_remediation
 
         elif self.policy:
             return self.checkViolationAgainstPolicy(
-                severity, technology, names=names, ids=ids
+                severity, policy, names=names, ids=ids
             )
         else:
             if severity == "none":
                 return False
             elif severity == "all":
                 return True
-            elif severity not in SEVERITIES:
+            elif severity not in SeverityLevelEnum.getAllSeverities():
                 Octokit.warning(f"Unknown Severity used - {severity}")
 
             return severity in self.severities
 
     def checkViolationAgainstPolicy(
-        self, severity: str, technology: str, names: List[str] = [], ids: List[str] = []
-    ):
+        self,
+        severity: str,
+        policy: GeneralPolicyModel,
+        names: List[str] = [],
+        ids: List[str] = [],
+    ) -> bool:
         severities = []
-        level = "all"
 
-        if technology:
-            policy = self.policy.get(technology)
-            if policy:
-                for name in names:
-                    check_name = str(name).lower()
-                    condition_names = [
-                        ign.lower()
-                        for ign in policy.get("conditions", {}).get("names", [])
-                    ]
-                    ingores_names = [
-                        ign.lower()
-                        for ign in policy.get("ignores", {}).get("names", [])
-                    ]
-                    if self.matchContent(check_name, ingores_names):
-                        return False
-                    elif self.matchContent(check_name, condition_names):
-                        return True
+        if policy and policy.enabled:
+            for name in names:
+                check_name = str(name).lower()
 
-                for id in ids:
-                    check_id = str(id).lower()
-                    condition_ids = [
-                        ign.lower()
-                        for ign in policy.get("conditions", {}).get("ids", [])
-                    ]
-                    ingores_ids = [
-                        ign.lower() for ign in policy.get("ignores", {}).get("ids", [])
-                    ]
-                    if self.matchContent(check_id, ingores_ids):
-                        return False
-                    elif self.matchContent(check_id, condition_ids):
-                        return True
+                if self.matchContent(check_name, policy.ignores.names):
+                    return False
+                elif self.matchContent(check_name, policy.conditions.names):
+                    return True
 
-            if self.policy.get(technology, {}).get("level"):
-                level = self.policy.get(technology, {}).get("level")
-                severities = self._buildSeverityList(level)
+            for id in ids:
+                check_id = str(id).lower()
+
+                if self.matchContent(check_id, policy.ignores.ids):
+                    return False
+                elif self.matchContent(check_id, policy.conditions.ids):
+                    return True
+
+            # If no names or ids are provided, check the policy level
+            if policy.level:
+                severities = SeverityLevelEnum.getSeveritiesFromName(policy.level)
         else:
             severities = self.severities
 
-        if level == "all":
-            severities = SEVERITIES
-        elif level == "none":
+        if severity == "all":
+            severities = SeverityLevelEnum.getAllSeverities()
+        elif severity == "none":
             severities = []
 
         return severity in severities
@@ -365,45 +204,37 @@ class Policy:
         license = license.lower()
 
         # Policy as Code
-        if self.policy and self.policy.get("licensing"):
+        if self.policy and self.policy.licensing.enabled:
             return self.checkLicensingViolationAgainstPolicy(license, dependency)
 
         return license in [l.lower() for l in LICENSES]
 
     def checkLicensingViolationAgainstPolicy(self, license: str, dependency: dict = {}):
-        policy = self.policy.get("licensing")
         license = license.lower()
+        policy = self.policy.licensing
 
+        # Get all the dependencies names
         dependency_short_name = dependency.get("name", "NA")
         dependency_name = (
             dependency.get("manager", "NA") + "://" + dependency.get("name", "NA")
         )
         dependency_full = dependency.get("full_name", "NA://NA#NA")
 
-        warning_ids = [wrn.lower() for wrn in policy.get("warnings", {}).get("ids", [])]
-        warning_names = [
-            wrn.lower() for wrn in policy.get("warnings", {}).get("names", [])
-        ]
-
         #  If the license name is in the warnings list
-        if self.matchContent(license, warning_ids) or self.matchContent(
-            dependency_full, warning_names
-        ):
+        if self.matchContent(license, policy.warnings.ids):
+            Octokit.warning(
+                f"Dependency License Warning :: {dependency_full} = {license}"
+            )
+        elif self.matchContent(dependency_full, policy.warnings.names):
             Octokit.warning(
                 f"Dependency License Warning :: {dependency_full} = {license}"
             )
 
-        ingore_ids = [ign.lower() for ign in policy.get("ingores", {}).get("ids", [])]
-        ingore_names = [
-            ign.lower() for ign in policy.get("ingores", {}).get("names", [])
-        ]
+        ingore_ids = policy.ignores.ids
+        ingore_names = policy.ignores.names
 
-        condition_ids = [
-            ign.lower() for ign in policy.get("conditions", {}).get("ids", [])
-        ]
-        conditions_names = [
-            ign.lower() for ign in policy.get("conditions", {}).get("names", [])
-        ]
+        condition_ids = policy.conditions.ids
+        conditions_names = policy.conditions.names
 
         for value in [license, dependency_full, dependency_name, dependency_short_name]:
 

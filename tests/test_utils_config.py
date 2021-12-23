@@ -58,20 +58,8 @@ class TestReportingConfig(unittest.TestCase):
         self.assertTrue(issue_template.enabled)
 
         reports = config.getReports(enabled=True)
-
-        reports = config.getReports()
+        # Only Issue report should be enabled
         self.assertEqual(len(reports), 1)
 
         issue = reports.get("issues")
         self.assertEqual(issue_template, issue)
-
-    def testGetDisabledReports(self):
-        issue_template = IssuesConfig()
-        config = ReportingConfig(issues=issue_template)
-
-        self.assertFalse(issue_template.enabled)
-
-        reports = config.getReports(enabled=False)
-
-        reports = config.getReports()
-        self.assertEqual(len(reports), 0)

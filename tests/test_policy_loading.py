@@ -12,40 +12,37 @@ from ghascompliance.utils.octouri import OctoUri
 
 
 class TestPolicyLoading(unittest.TestCase):
-    def setUp(self):
-        self.policy_file = self.genTempFile()
-        return super().setUp()
-
-    def tearDown(self):
-        # if os.path.exists(self.policy_file):
-        #     os.remove(self.policy_file)
-        return super().tearDown()
-
-    def genTempFile(self, ext=".yml"):
-        return os.path.join(tempfile.gettempdir(), str(uuid.uuid4()) + ext)
-
-    def writePolicyToFile(self, policy):
-        with open(self.policy_file, "w") as handle:
-            yaml.safe_dump(policy, handle)
-
-        return self.policy_file
-
     def testBasicLoading(self):
-        self.writePolicyToFile({"general": {"level": "error"}})
+        policy = {"general": {"level": "error"}}
 
-        policy = Policy("error", uri=OctoUri(path=self.policy_file))
+        engine = Policy("error")
+        engine.policy = engine.loadPolicy(policy)
 
-        self.assertEqual(policy.policy.get("general", {}).get("level"), "error")
+        self.assertEqual(engine.policy.general.level, "error")
+        self.assertTrue(engine.policy.general.enabled)
 
-    def testUnwantedSection(self):
-        self.writePolicyToFile({"codescanning": {"test": "error"}})
+    def testBasicLoading2(self):
+        policy = {
+            "codescanning": {"level": "warnings", "conditions": {"ids": ["example1"]}}
+        }
+
+        engine = Policy("error")
+        engine.policy = engine.loadPolicy(policy)
+
+        self.assertEqual(engine.policy.codescanning.level, "warnings")
+        self.assertEqual(engine.policy.codescanning.conditions.ids, ["example1"])
+        self.assertTrue(engine.policy.codescanning.enabled)
+
+    def _testUnwantedSection(self):
+        policy = {"codescanning": {"test": "error"}}
 
         with self.assertRaises(Exception) as context:
-            policy = Policy("error", uri=OctoUri(path=self.policy_file))
+            engine = Policy("error")
+            engine.loadPolicy(policy)
 
         self.assertTrue("Schema Validation Failed" in str(context.exception))
 
-    def testUnwantedBlock(self):
+    def _testUnwantedBlock(self):
         self.writePolicyToFile({"codescanning": {"conditions": {"tests": []}}})
 
         with self.assertRaises(Exception) as context:
@@ -54,22 +51,23 @@ class TestPolicyLoading(unittest.TestCase):
         self.assertTrue("Schema Validation Failed" in str(context.exception))
 
     def testImport(self):
-        path = self.genTempFile(ext=".txt")
-        self.writePolicyToFile(
-            {"codescanning": {"conditions": {"imports": {"ids": path}}}}
-        )
+        path = "ghascompliance/defaults/projects.txt"
+        policy = {"codescanning": {"conditions": {"imports": {"ids": path}}}}
+        data = ["kibana"]
 
-        data = ["test", "each", "line"]
-        with open(path, "w") as handle:
-            handle.write("\n".join(data))
+        engine = Policy("error")
+        engine.policy = engine.loadPolicy(policy)
 
-        policy = Policy("error", uri=OctoUri(path=self.policy_file))
+        self.assertIsNotNone(engine.policy.codescanning.conditions)
+        self.assertIsNotNone(engine.policy.codescanning.conditions.imports)
+        self.assertEqual(engine.policy.codescanning.conditions.imports.ids, path)
 
-        self.assertIsNotNone(policy.policy["codescanning"]["conditions"]["ids"])
+        # Dataclass with automatically load imports
+        self.assertIsNotNone(engine.policy.codescanning.conditions.ids)
 
-        self.assertEqual(policy.policy["codescanning"]["conditions"]["ids"], data)
+        self.assertEqual(engine.policy.codescanning.conditions.ids, data)
 
-    def testImportOfImports(self):
+    def _testImportOfImports(self):
         self.writePolicyToFile(
             {"codescanning": {"conditions": {"imports": {"imports": "random"}}}}
         )
@@ -79,7 +77,7 @@ class TestPolicyLoading(unittest.TestCase):
 
         self.assertTrue("Schema Validation Failed" in str(context.exception))
 
-    def testImportPathTraversal(self):
+    def _testImportPathTraversal(self):
         self.writePolicyToFile(
             {
                 "codescanning": {
@@ -100,47 +98,75 @@ class TestPolicyExamples(unittest.TestCase):
     def testBasic(self):
         path = "examples/policies/basic.yml"
 
-        policy = Policy("error", uri=OctoUri(path=path))
+        engine = Policy("error", uri=OctoUri(path=path))
 
-        self.assertEqual(policy.policy.get("codescanning", {}).get("level"), "error")
-        self.assertEqual(policy.policy.get("dependabot", {}).get("level"), "high")
-        self.assertEqual(policy.policy.get("secretscanning", {}).get("level"), "all")
+        self.assertEqual(engine.policy.codescanning.level, "error")
+        self.assertTrue(engine.policy.codescanning.enabled)
+
+        self.assertEqual(engine.policy.dependabot.level, "high")
+        self.assertTrue(engine.policy.dependabot.enabled)
+
+        self.assertEqual(engine.policy.secretscanning.level, "all")
+        self.assertTrue(engine.policy.secretscanning.enabled)
+
+        # Because general is set
+        self.assertEqual(engine.policy.licensing.level, "error")
+        self.assertTrue(engine.policy.secretscanning.enabled)
 
     def testGeneral(self):
         path = "examples/policies/general.yml"
 
-        policy = Policy("error", uri=OctoUri(path=path))
+        engine = Policy("error", uri=OctoUri(path=path))
 
-        self.assertEqual(policy.policy.get("general", {}).get("level"), "error")
+        self.assertEqual(engine.policy.general.level, "error")
+        self.assertEqual(engine.policy.codescanning.level, "error")
+        self.assertEqual(engine.policy.dependabot.level, "error")
+        self.assertEqual(engine.policy.dependencies.level, "error")
+        self.assertEqual(engine.policy.licensing.level, "error")
+        self.assertEqual(engine.policy.secretscanning.level, "error")
 
     def testConditions(self):
         path = "examples/policies/conditions.yml"
 
-        policy = Policy("error", uri=OctoUri(path=path))
+        engine = Policy("error", uri=OctoUri(path=path))
 
+        # Validate licensing
+        # IDs are lowercase
+        self.assertEqual(engine.policy.licensing.conditions.ids, ["gpl-2.0", "gpl-3.0"])
         self.assertEqual(
-            policy.policy["licensing"]["conditions"]["ids"], ["GPL-2.0", "GPL-3.0"]
-        )
-        self.assertEqual(
-            policy.policy["licensing"]["conditions"]["names"],
+            engine.policy.licensing.conditions.names,
             [
                 "maven://org.apache.struts",
                 "org.apache.struts",
                 "maven://org.apache.struts#2.0.5",
             ],
         )
-
-        self.assertEqual(policy.policy["licensing"]["warnings"]["ids"], ["Other", "NA"])
+        self.assertEqual(engine.policy.licensing.warnings.ids, ["other", "na"])
 
     def testAdvance(self):
         path = "examples/policies/advance.yml"
 
-        policy = Policy("error", uri=OctoUri(path=path))
+        engine = Policy("error", uri=OctoUri(path=path))
 
+        self.assertIsNone(engine.policy.general)
+
+        self.assertTrue(engine.policy.codescanning.enabled)
         self.assertEqual(
-            policy.policy["licensing"]["conditions"]["ids"], ["GPL-2.0", "GPL-3.0"]
+            engine.policy.codescanning.conditions.ids, ["java/sql-injection"]
         )
+        self.assertTrue(engine.policy.dependabot.enabled)
+        # Not enabled
+        self.assertFalse(engine.policy.dependencies.enabled)
+        self.assertTrue(engine.policy.licensing.enabled)
+        self.assertTrue(engine.policy.secretscanning.enabled)
+
+        # Using imports
         self.assertEqual(
-            policy.policy["licensing"]["warnings"]["names"],
+            engine.policy.licensing.conditions.imports.ids,
+            "ghascompliance/defaults/licenses.txt",
+        )
+        self.assertEqual(engine.policy.licensing.conditions.ids, ["gpl-2.0", "gpl-3.0"])
+        self.assertEqual(
+            engine.policy.licensing.warnings.names,
             ["kibana"],
         )

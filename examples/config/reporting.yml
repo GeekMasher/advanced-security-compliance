@@ -7,13 +7,18 @@ policy:
   display: false
 
 
-checkers:
+# checkers:
   # Disable all dependency tooling
-  dependabot: false
-  dependencies: false
-  licensing: false
+  # dependabot: false
+  # dependencies: false
+  # licensing: false
 
 reporting:
-  issues:
-    owner: GeekMasherOrg
-    repository: security
+  issues_summary:
+    title: "[GHAS Compliance] {{owner}}/{{repository}}"
+    repository: GeekMasherOrg/security
+
+    assignees:
+      - GeekMasher
+
+    template: summary.md

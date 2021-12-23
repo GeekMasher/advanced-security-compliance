@@ -1,4 +1,5 @@
 import os
+from typing import ClassVar
 import yaml
 from dataclasses import dataclass
 
@@ -49,6 +50,11 @@ class CheckersConfig:
 class GitHubConfig:
     instance: str = None
     repository: str = None
+
+
+@dataclass
+class Paths:
+    policy_repository: ClassVar[str] = None
 
 
 @dataclass

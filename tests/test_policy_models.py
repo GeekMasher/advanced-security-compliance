@@ -14,36 +14,70 @@ class TestPoliciesModels(unittest.TestCase):
         policy = PolicyModel(version="2.0", name="TestCase")
 
         self.assertEqual(policy.name, "TestCase")
+        self.assertEqual(policy.version, "2.0")
 
         #  Make sure not policies are loaded by default unless general
-        self.assertIsNotNone(policy.general)
-        self.assertEqual(policy.general.level, "error")
+        self.assertIsNone(policy.general)
+        self.assertIsNotNone(policy.codescanning)
+        self.assertIsNotNone(policy.dependabot)
+        self.assertIsNotNone(policy.dependencies)
+        self.assertIsNotNone(policy.licensing)
+        self.assertIsNotNone(policy.secretscanning)
 
-    def testPolicyModelDefaults(self):
+    def testPolicyModelGeneralDefaults(self):
+        policy = PolicyModel(
+            version="2.0", name="TestCase", general=GeneralPolicyModel(level="warning")
+        )
+        # TODO: might need to be changed
+        self.assertEqual(policy.name, "TestCase")
+        self.assertTrue(policy.general.enabled)
+        self.assertEqual(policy.general.level, "warning")
+
+        #  Make sure policy are loaded by default with general
+        self.assertIsNotNone(policy.codescanning)
+        self.assertTrue(policy.codescanning.enabled)
+        # self.assertEqual(policy.codescanning.level, policy.general.level)
+
+        self.assertIsNotNone(policy.dependabot)
+        self.assertTrue(policy.dependabot.enabled)
+        # self.assertEqual(policy.dependabot.level, policy.general.level)
+
+        self.assertIsNotNone(policy.licensing)
+        self.assertTrue(policy.licensing.enabled)
+        # self.assertEqual(policy.licensing.level, policy.general.level)
+
+        self.assertIsNotNone(policy.dependencies)
+        self.assertTrue(policy.dependencies.enabled)
+        # self.assertEqual(policy.dependencies.level, policy.general.level)
+
+        self.assertIsNotNone(policy.secretscanning)
+        self.assertTrue(policy.secretscanning.enabled)
+        # self.assertEqual(policy.secretscanning.level, policy.general.level)
+
+    def testPolicyModelPolicies(self):
         policy = PolicyModel(
             version="2.0", name="TestCase", general=GeneralPolicyModel(level="warning")
         )
 
-        self.assertEqual(policy.general.level, "warning")
+        self.assertEqual(len(policy.getPolicies()), 5)
+        # TODO: test if all policies are loaded
 
-        self.assertIsNotNone(policy.codescanning)
-        self.assertEqual(policy.codescanning.level, policy.general.level)
+    def testPolicyModelCodeScanning(self):
+        policy = PolicyModel(
+            version="2.0",
+            name="TestCase",
+            codescanning=GeneralPolicyModel(level="warning"),
+        )
+        self.assertTrue(policy.codescanning.enabled)
+        self.assertFalse(policy.dependabot.enabled)
+        self.assertFalse(policy.dependencies.enabled)
+        self.assertFalse(policy.licensing.enabled)
+        self.assertFalse(policy.secretscanning.enabled)
 
-        self.assertIsNotNone(policy.dependabot)
-        self.assertEqual(policy.dependabot.level, policy.general.level)
 
-        self.assertIsNotNone(policy.licensing)
-        self.assertEqual(policy.licensing.level, policy.general.level)
-
-        self.assertIsNotNone(policy.dependencies)
-        self.assertEqual(policy.dependencies.level, policy.general.level)
-
-        self.assertIsNotNone(policy.secretscanning)
-
-    def testPolicyModelPolicies(self):
-        policy = PolicyModel(version="2.0", name="TestCase")
-
-        self.assertEqual(len(policy.policies), 5)
+class TestGeneralPolicyModel(unittest.TestCase):
+    def setUp(self):
+        return super().setUp()
 
     def testGeneralPolicyModel(self):
         policy = GeneralPolicyModel(level="error")
@@ -81,7 +115,7 @@ class TestPoliciesModels(unittest.TestCase):
             result,
         )
 
-    def testGeneralPolicyModelLevels(self):
+    def testGentralPolicyModelLevels(self):
 
         with self.assertRaises(Exception) as context:
             policy = GeneralPolicyModel(level="random_string")
@@ -96,11 +130,27 @@ class TestPoliciesModels(unittest.TestCase):
 
         policy = BlockPolicyModels(ids=ids, names=names)
 
-        self.assertEqual(policy.ids, ids)
+        # When the policy is loaded, the ids and names are lowercased
+        self.assertEqual(policy.ids, ["ghsa-446m-mv8f-q348"])
         self.assertEqual(policy.names, names)
 
-    def testRemediateModel(self):
+
+class TestRemediateModel(unittest.TestCase):
+    def testNegativeValues(self):
+        with self.assertRaises(Exception) as context:
+            _ = RemediateModel(high=-1, error=15)
+
+        self.assertTrue("Invalid remediate value for" in str(context.exception))
+
+        with self.assertRaises(Exception) as context:
+            _ = RemediateModel(high=-13, error=15)
+
+        self.assertTrue("Invalid remediate value for" in str(context.exception))
+
+    def testGetRemediateTime(self):
         remediate = RemediateModel(high=1, error=15)
+
+        self.assertTrue(remediate.enabled)
 
         self.assertEqual(remediate.high, 1)
         result = remediate.getRemediateTime("high")
@@ -110,6 +160,12 @@ class TestPoliciesModels(unittest.TestCase):
         result = remediate.getRemediateTime("error")
         self.assertEqual(result, 15)
 
+        # Non specified remediate levels
+        self.assertIsNone(remediate.warning)
+        result = remediate.getRemediateTime("critical")
+        # Comes from error being set
+        self.assertEqual(result, 1)
+
         self.assertIsNone(remediate.warning)
         result = remediate.getRemediateTime("warning")
-        self.assertEqual(result, 15)
+        self.assertIsNone(result)

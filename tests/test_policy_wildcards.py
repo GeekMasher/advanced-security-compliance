@@ -52,26 +52,26 @@ class TestPolicyLoading(unittest.TestCase):
         policy_path = "tests/samples/wildcards.yml"
         self.assertTrue(os.path.exists(policy_path))
 
-        policy = Policy("error", OctoUri(path=policy_path))
+        engine = Policy("error", OctoUri(path=policy_path))
 
-        ids = policy.policy.get("licensing", {}).get("conditions", {}).get("ids")
-        self.assertEqual(ids, ["*-Examples", "MyLicencing-*"])
+        ids = engine.policy.licensing.conditions.ids
+        # lowercase
+        self.assertEqual(ids, ["*-examples", "mylicencing-*"])
 
-        self.assertFalse(policy.checkLicensingViolation("MyLicencing"))
-        self.assertTrue(policy.checkLicensingViolation("MyLicencing-1.0"))
+        self.assertFalse(engine.checkLicensingViolation("MyLicencing"))
+        self.assertTrue(engine.checkLicensingViolation("MyLicencing-1.0"))
 
-        self.assertTrue(policy.checkLicensingViolation("Test-Examples"))
+        self.assertTrue(engine.checkLicensingViolation("Test-Examples"))
 
 
 class TestDefaultPolicyWildcards(unittest.TestCase):
     def setUp(self):
         self.policy = Policy(uri=OctoUri(path="ghascompliance/defaults/policy.yml"))
-
         return super().setUp()
 
     def testDefault(self):
-        ids = self.policy.policy.get("licensing", {}).get("conditions", {}).get("ids")
-        self.assertEqual(ids, ["GPL-*", "LGPL-*", "AGPL-*"])
+        ids = self.policy.policy.licensing.conditions.ids
+        self.assertEqual(ids, ["gpl-*", "lgpl-*", "agpl-*"])
 
     def testGPLVariants(self):
         self.assertTrue(self.policy.checkLicensingViolation("GPL-2.0"))
