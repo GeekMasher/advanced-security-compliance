@@ -1,0 +1,24 @@
+name: "Reporting Configuration"
+
+# Policy Settings
+policy:
+  path: GeekMasher/security-queries/policies/default.yml@main
+  severity: Error
+  display: false
+
+
+# checkers:
+  # Disable all dependency tooling
+  # dependabot: false
+  # dependencies: false
+  # licensing: false
+
+reporting:
+  issues_summary:
+    title: "[GHAS Compliance] {{owner}}/{{repository}}"
+    repository: GeekMasherOrg/security
+
+    assignees:
+      - GeekMasher
+
+    template: summary.md

@@ -1,0 +1,14 @@
+name: "Standard Configuration"
+
+policy:
+  repository: GeekMasher/security-queries
+  path: policies/advance.yml
+  branch: main
+  severity: Error
+  display: false
+
+checkers:
+  # Disable all dependency tooling
+  dependabot: false
+  dependencies: false
+  licensing: false

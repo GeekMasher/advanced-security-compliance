@@ -18,6 +18,9 @@ inputs:
     description: GitHub Ref
     default: ${{ github.ref }}
 
+  config:
+    description: 'Configuration file path location (relative or octo uri)'
+
   action:
     description: 'Action to take upon discovery of security issues hitting threshold'
     default: break
@@ -52,6 +55,7 @@ runs:
         PYTHONPATH=${{ github.action_path }} && export PYTHONPATH=${{ github.action_path }}
         python3 -m ghascompliance \
           --severity "${{ inputs.severity }}" \
+          --config "${{ inputs.config }}" \
           --action "${{ inputs.action }}" \
           --github-token "${{ inputs.token }}" \
           --github-repository "${{ inputs.repository }}" \

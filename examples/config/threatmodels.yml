@@ -1,0 +1,33 @@
+name: "Standard Configuration"
+
+# Policy Settings
+policy:
+  path: GeekMasher/security-queries/policies/default.yml@main
+  severity: Error
+  display: false
+
+
+threat_models:
+  # If the source is set, the file is required on all repositories that uses
+  #  this action.
+  source: GeekMasher/security-queries/policies/applications.yml@main
+
+  # All 3 models use the same policy settings format
+  high:
+    repository: GeekMasher/security-queries
+    path: policies/high.yml
+    branch: main
+  normal:
+    repository: GeekMasher/security-queries
+    path: policies/default.yml
+    branch: main
+  low:
+    repository: GeekMasher/security-queries
+    path: policies/low.yml
+    branch: main
+
+checkers:
+  # Disable all dependency tooling
+  dependabot: false
+  dependencies: false
+  licensing: false

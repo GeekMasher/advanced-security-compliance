@@ -1,6 +1,7 @@
+
 import os
 import json
-from sys import prefix
+from sys import prefix, modules
 import yaml
 import logging
 import requests
@@ -37,10 +38,19 @@ class GitHub:
         # TODO: Validate instance
         url = urlparse(instance)
         self.set("instance", instance)
-        # TODO: Validate API url
-        api = url.scheme + "://api." + url.netloc
-        self.set("api.rest", api)
-        self.set("api.graphql", api + "/graphql")
+
+        # GitHub Cloud
+        if url.netloc == "github.com":
+            api = url.scheme + "://api." + url.netloc
+            self.set("api.rest", api)
+            self.set("api.graphql", api + "/graphql")
+        # GitHub Server
+        #  https://docs.github.com/en/enterprise-server@3.1/rest/overview/resources-in-the-rest-api#schema
+        else:
+            api = url.scheme + "://" + url.netloc + "/api"
+            self.set("api.rest", api + "/v3")
+            self.set("api.graphql", api + "/graphql")
+
         # TODO: Validate ref; examples: refs/heads/main
         self.set("ref", ref)
 
@@ -62,7 +72,7 @@ class GitHub:
 
     @property
     def url(self):
-        return "https://" + self.instance + "/" + self.repository
+        return self.instance + "/" + self.repository
 
     @property
     def cloneUrl(self):
@@ -79,13 +89,15 @@ class Octokit:
     __ERRORS__ = []
     __EVENT__ = None
     __PREFIX_WARNING__ = ""
+    __TESTING__ = "unittest" in modules.keys()
 
     logger = logging.getLogger(__name__)
 
     @staticmethod
     def info(msg):
-        logging.info(msg)
-        print(msg)
+        if not Octokit.__TESTING__:
+            logging.info(msg)
+            print(msg)
 
     def debug(msg):
         logging.debug(msg)
@@ -135,6 +147,8 @@ class Octokit:
     def endGroup():
         if Octokit.__EVENT__:
             print("::endgroup::")
+        else:
+            print("{:-^64}".format(""))
         Octokit.__PREFIX__ = ""
 
     @staticmethod

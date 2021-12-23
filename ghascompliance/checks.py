@@ -8,6 +8,7 @@ from ghascompliance.octokit import Octokit, GitHub
 from ghascompliance.octokit.codescanning import CodeScanning
 from ghascompliance.octokit.secretscanning import SecretScanning
 from ghascompliance.octokit.dependabot import Dependencies
+from ghascompliance.reporting.models import SecurityReport
 
 
 class Checks:
@@ -57,7 +58,8 @@ class Checks:
     def checkCodeScanning(self):
         # Code Scanning results
         Octokit.createGroup("Code Scanning Results")
-        code_scanning_errors = 0
+
+        report = SecurityReport()
 
         codescanning = CodeScanning(self.github)
 
@@ -106,19 +108,19 @@ class Checks:
                         col=location.get("start_column"),
                     )
 
-                code_scanning_errors += 1
+                report.errors += 1
 
         alerts_message = "Code Scanning violations :: {count}"
-        Octokit.info(alerts_message.format(count=code_scanning_errors))
+        Octokit.info(alerts_message.format(count=report.total))
 
         Octokit.endGroup()
 
-        return code_scanning_errors
+        return report
 
     def checkDependabot(self):
         Octokit.createGroup("Dependabot Results")
 
-        dependabot_errors = 0
+        report = SecurityReport()
 
         dependabot = Dependencies(self.github)
 
@@ -189,13 +191,13 @@ class Checks:
                 if self.display:
                     Octokit.error("Dependabot Alert :: {}".format(full_name))
 
-                dependabot_errors += 1
+                report.errors += 1
 
-        Octokit.info("Dependabot violations :: " + str(dependabot_errors))
+        Octokit.info("Dependabot violations :: " + str(report.total))
 
         Octokit.endGroup()
 
-        return dependabot_errors
+        return report
 
     def checkDependencyLicensing(self):
         Octokit.createGroup(
@@ -203,7 +205,7 @@ class Checks:
             warning_prepfix="Dependency Graph Alert",
         )
 
-        licensing_errors = 0
+        report = SecurityReport()
 
         dependabot = Dependencies(self.github)
 
@@ -223,13 +225,13 @@ class Checks:
                         )
                     )
 
-                licensing_errors += 1
+                report.errors += 1
 
-        Octokit.info("Dependency Graph violations :: " + str(licensing_errors))
+        Octokit.info("Dependency Graph violations :: " + str(report.total))
 
         Octokit.endGroup()
 
-        return licensing_errors
+        return report
 
     def checkDependencies(self):
         Octokit.createGroup(
@@ -237,7 +239,7 @@ class Checks:
             warning_prepfix="Dependency Graph Alert",
         )
 
-        dependency_errors = 0
+        report = SecurityReport()
 
         dependabot = Dependencies(self.github)
         dependencies = self.getResults("dependencies", dependabot.getDependencies)
@@ -268,7 +270,7 @@ class Checks:
                             dependency.get("full_name")
                         )
                     )
-                dependency_errors += 1
+                report.errors += 1
 
             #
             if "Maintenance" in policy.get("ids", []):
@@ -278,7 +280,7 @@ class Checks:
                             **dependency, main=main.title()
                         )
                     )
-                    dependency_errors += 1
+                    report.warnings += 1
 
             if "Organization" in policy.get("ids", []) and not dependency.get(
                 "organization"
@@ -288,19 +290,19 @@ class Checks:
                         **dependency, error="Non-Org Repo"
                     )
                 )
-                dependency_errors += 1
+                report.warnings += 1
 
-        Octokit.info("Dependency Graph violations :: " + str(dependency_errors))
+        Octokit.info("Dependency Graph violations :: " + str(report.total))
 
         Octokit.endGroup()
 
-        return dependency_errors
+        return report
 
     def checkSecretScanning(self):
         # Secret Scanning Results
         Octokit.createGroup("Secret Scanning Results")
 
-        secrets_errors = 0
+        report = SecurityReport()
 
         secretscanning = SecretScanning(self.github)
 
@@ -324,13 +326,13 @@ class Checks:
                 if self.display:
                     Octokit.info("Unresolved Secret - {secret_type}".format(**alert))
 
-            secrets_errors += 1
+            report.errors += 1
 
-        Octokit.info("Secret Scanning violations :: " + str(secrets_errors))
+        Octokit.info("Secret Scanning violations :: " + str(report.total))
 
         Octokit.endGroup()
 
-        return secrets_errors
+        return report
 
     def isRemediationPolicy(self, technology: str = "general") -> bool:
         return self.policy.policy.get(technology, {}).get("remediate") is not None
