@@ -6,4 +6,5 @@ class CodeScanning(OctoRequests):
         "GET", "/repos/{owner}/{repo}/code-scanning/alerts", params={"state": "open"}
     )
     def getOpenAlerts(self, response: dict = {}):
+        """Get all Open Code Scanning Alerts"""
         return response

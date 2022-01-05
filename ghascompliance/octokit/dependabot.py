@@ -86,12 +86,14 @@ class Dependencies(OctoRequests):
 
     @staticmethod
     def createDependencyName(manager: str, dependency: str, version: str = None):
+        """Create a dependency full name"""
         ret = manager.lower() + "://" + dependency.lower()
         if version:
             ret += "#" + version.lower()
         return ret
 
     def getOpenAlerts(self, response: dict = {}):
+        """Get Open Security Dependencies Alerts"""
 
         variables = {"owner": self.github.owner, "repo": self.github.repo}
 
@@ -132,6 +134,7 @@ class Dependencies(OctoRequests):
         return data
 
     def getDependencies(self, response: dict = {}):
+        """Get Open Dependencies"""
 
         variables = {"owner": self.github.owner, "repo": self.github.repo}
 
