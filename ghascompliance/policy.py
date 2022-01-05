@@ -26,6 +26,7 @@ class Policy:
         severity="error",
         repository=None,
         token=None,
+        isGithubAppToken=False,
         path=None,
         branch=None,
         instance="https://github.com",
@@ -39,11 +40,13 @@ class Policy:
 
         self.instance = instance
         self.token = token
+        self.isGithubAppToken = isGithubAppToken
         self.branch = branch
         self.repository = repository
         self.repository_path = path
 
         self.temp_repo = None
+
 
         if repository and repository != "":
             self.loadFromRepo()
@@ -53,7 +56,10 @@ class Policy:
     def loadFromRepo(self):
         instance = urlparse(self.instance).netloc
         if self.token:
-            repo = "https://" + self.token + "@" + instance + "/" + self.repository
+            if not self.isGithubAppToken:
+                repo = "https://" + self.token + "@" + instance + "/" + self.repository
+            else:
+                repo = "https://" + "x-access-token:" + self.token + "@" + instance + "/" + self.repository
         else:
             repo = "https://" + instance + "/" + self.repository
 
