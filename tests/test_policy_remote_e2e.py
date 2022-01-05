@@ -21,7 +21,7 @@ class TestPolicyLoadingRemote(unittest.TestCase):
 
         return super().tearDown()
 
-    def testBranches(self):
+    def _testBranches(self):
         #  More of an integration test
         self.policy = Policy(
             severity="error",
