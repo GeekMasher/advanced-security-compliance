@@ -5,6 +5,8 @@ verify_ssl = true
 
 [dev-packages]
 black = "==21.5b1"
+sphinx = "*"
+myst-parser = "*"
 
 [packages]
 pyyaml = "*"

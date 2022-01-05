@@ -1,0 +1,30 @@
+name: Docs
+
+on:
+  push:
+    branches: [main, docs]
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.9"
+
+      - name: Install Deps
+        run: |
+          python3 -m pip install pipenv && python3 -m pipenv install --dev --system
+
+      - name: Build docs
+        run: |
+          sphinx-build -b html docs/ ./public
+
+      - name: Publish
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
