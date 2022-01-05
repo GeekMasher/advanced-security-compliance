@@ -26,19 +26,19 @@ jobs:
         run: pipenv run python -m unittest discover -s ./tests -p "test_*.py"
 
       # Secret Scanning will not work
-      - name: Run Full Scenario (Public repo)
-        run: |
-          pipenv run main \
-            --github-repository "GeekMasher/Pixi" \
-            --github-ref "refs/heads/master" \
-            --github-token "${{ secrets.FULL_SCOPE_TOKEN }}" \
-            --action "continue" \
-            --disable-secret-scanning
+      # - name: Run Full Scenario (Public repo)
+      #   run: |
+      #     pipenv run main \
+      #       --github-repository "GeekMasher/Pixi" \
+      #       --github-ref "refs/heads/master" \
+      #       --github-token "${{ secrets.FULL_SCOPE_TOKEN }}" \
+      #       --action "continue" \
+      #       --disable-secret-scanning
 
-      - name: Run Full Scenario (Private repo)
-        run: |
-          pipenv run main \
-            --github-repository "GeekMasherOrg/Pixi" \
-            --github-ref "refs/heads/master" \
-            --github-token "${{ secrets.FULL_SCOPE_TOKEN }}" \
-            --action "continue"
+      # - name: Run Full Scenario (Private repo)
+      #   run: |
+      #     pipenv run main \
+      #       --github-repository "GeekMasherOrg/Pixi" \
+      #       --github-ref "refs/heads/master" \
+      #       --github-token "${{ secrets.FULL_SCOPE_TOKEN }}" \
+      #       --action "continue"
