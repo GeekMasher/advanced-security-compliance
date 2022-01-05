@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-__version__ = "1.5.0"
+__version__ = "1.6.0"
 
 __title__ = "GitHub Advanced Security Compliance"
 __name__ = "ghascompliance"
