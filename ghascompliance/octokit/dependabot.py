@@ -194,16 +194,16 @@ class Dependencies(OctoRequests):
                 Octokit.debug(f" > {dependency_name} == {dependency_license_name}")
 
                 dependency_maintenance = []
-                for dep_maintenance in [
+                #  for dep_maintenance in [
                     #  "isArchived",
-                    "isDisabled",
-                    "isEmpty",
-                    "isLocked",
-                ]:
-                    if dependency_repo and dependency_repo.get(dep_maintenance, False):
-                        dependency_maintenance.append(
-                            dep_maintenance.replace("is", "", 1).lower()
-                        )
+                    #  "isDisabled",
+                    #  "isEmpty",
+                    #  "isLocked",
+                #  ]:
+                    #  if dependency_repo and dependency_repo.get(dep_maintenance, False):
+                        #  dependency_maintenance.append(
+                            #  dep_maintenance.replace("is", "", 1).lower()
+                        #  )
 
                 is_organization: bool = None
                 if dependency_repo:
