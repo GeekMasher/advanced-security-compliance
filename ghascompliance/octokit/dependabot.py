@@ -54,7 +54,6 @@ GRAPHQL_DEPENDENCY_INFO = """\
                                 packageManager
                                 requirements
                                 repository {
-                                    isArchived
                                     isDisabled
                                     isEmpty
                                     isFork
@@ -196,7 +195,7 @@ class Dependencies(OctoRequests):
 
                 dependency_maintenance = []
                 for dep_maintenance in [
-                    "isArchived",
+                    #  "isArchived",
                     "isDisabled",
                     "isEmpty",
                     "isLocked",
