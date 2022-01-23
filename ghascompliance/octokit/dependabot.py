@@ -54,11 +54,6 @@ GRAPHQL_DEPENDENCY_INFO = """\
                                 packageManager
                                 requirements
                                 repository {
-                                    isDisabled
-                                    isEmpty
-                                    isFork
-                                    isSecurityPolicyEnabled
-                                    isInOrganization
                                     licenseInfo {
                                         name
                                     }
