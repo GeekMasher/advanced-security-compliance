@@ -411,6 +411,9 @@ class Policy:
         )
         dependency_full = dependency.get("full_name", "NA://NA#NA")
         dependency_spdxId = dependency.get("spdxId", "NA")
+        # log dependency spdxId
+        Octokit.info(f"Dependency SPDX ID :: {dependency_spdxId}")
+
 
         # gather warning ids and names
         warning_ids = [wrn.lower() for wrn in policy.get("warnings", {}).get("ids", [])]
