@@ -56,6 +56,7 @@ GRAPHQL_DEPENDENCY_INFO = """\
                                 repository {
                                     licenseInfo {
                                         name
+                                        spdxId
                                     }
                                 }
                             }
@@ -154,8 +155,6 @@ class Dependencies(OctoRequests):
         results = []
 
         repo = response.get("data", {}).get("repository", {})
-        # repo_name = repo.get('name')
-        # repo_license = repo.get('licenseInfo', {}).get('name')
 
         manifests = repo.get("dependencyGraphManifests", {}).get("edges", [])
 
@@ -208,6 +207,8 @@ class Dependencies(OctoRequests):
                     dependency_manager, dependency_name, dependency_requirement
                 )
 
+                spdxId = dependency_license.get("spdxId", "NA") if dependency_license else "NA"
+
                 results.append(
                     {
                         "name": dependency_name,
@@ -218,6 +219,7 @@ class Dependencies(OctoRequests):
                         "license": dependency_license_name,
                         "maintenance": dependency_maintenance,
                         "organization": is_organization,
+                        "spdxId": spdxId
                     }
                 )
 

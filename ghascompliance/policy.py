@@ -410,6 +410,7 @@ class Policy:
             dependency.get("manager", "NA") + "://" + dependency.get("name", "NA")
         )
         dependency_full = dependency.get("full_name", "NA://NA#NA")
+        dependency_spdxId = dependency.get("spdxId", "NA")
 
         # gather warning ids and names
         warning_ids = [wrn.lower() for wrn in policy.get("warnings", {}).get("ids", [])]
@@ -439,7 +440,7 @@ class Policy:
             ign.lower() for ign in policy.get("conditions", {}).get("names", [])
         ]
 
-        for value in [license, dependency_full, dependency_name, dependency_short_name]:
+        for value in [license, dependency_full, dependency_name, dependency_short_name, dependency_spdxId]:
 
             # return false (ignore) if name or id is defined in the ignore portion of the policy
             if self.matchContent(value, ignore_ids) or self.matchContent(
