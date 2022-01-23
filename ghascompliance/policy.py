@@ -454,7 +454,7 @@ class Policy:
                 return False
             # annotate error and return true if name or id is defined as a condition
             elif self.matchContent(value, condition_ids) or self.matchContent(
-                value, conditions_names
+                value, conditions_ids
             ):
                 Octokit.error(
                     f"Dependency License Violation :: {dependency_full} == {license}"
