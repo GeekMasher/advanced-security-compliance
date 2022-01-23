@@ -6,6 +6,7 @@ import fnmatch
 import datetime
 import tempfile
 import subprocess
+import re
 from typing import List
 from urllib.parse import urlparse
 from ghascompliance.consts import SEVERITIES, TECHNOLOGIES, LICENSES
