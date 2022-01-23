@@ -263,11 +263,9 @@ class Policy:
         return severities
 
     def matchContent(self, name: str, validators: List[str]):
-        # Wildcard matching
+        # case insensitive regex test if name is in validators
         for validator in validators:
-            results = fnmatch.filter([name], validator)
-            Octokit.info(f"Matching {name} with {validator} :: {results}")
-            if results:
+            if re.search(validator, name, re.IGNORECASE):
                 return True
         return False
 
