@@ -446,7 +446,7 @@ class Policy:
         Octokit.info(f"Conditions Names :: {conditions_names}")
 
         for value in [license, dependency_full, dependency_name, dependency_short_name, dependency_spdxId]:
-            Octokit.info(f"Dependency Value :: {value}")
+            Octokit.info(f"Dependency Value line 449 :: {value}")
 
             # return false (ignore) if name or id is defined in the ignore portion of the policy
             if self.matchContent(value, ignore_ids) or self.matchContent(
@@ -455,7 +455,7 @@ class Policy:
                 Octokit.info(f"Dependency License Ignore :: {value}")
                 return False
             # annotate error and return true if name or id is defined as a condition
-            elif self.matchContent(value, conditions_ids) or self.matchContent(
+            if self.matchContent(value, conditions_ids) or self.matchContent(
                 value, conditions_names
             ):
                 Octokit.error(
