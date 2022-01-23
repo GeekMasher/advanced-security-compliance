@@ -436,7 +436,7 @@ class Policy:
         ]
 
         # gather condition ids and names
-        conditions_names = [
+        conditions_ids = [
             ign.lower() for ign in policy.get("conditions", {}).get("ids", [])
         ]
         Octokit.info(f"Conditions Names :: {conditions_names}")
