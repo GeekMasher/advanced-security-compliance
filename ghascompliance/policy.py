@@ -436,12 +436,14 @@ class Policy:
         ]
 
         # gather condition ids and names
-        condition_ids = [
+        conditions_names = [
             ign.lower() for ign in policy.get("conditions", {}).get("ids", [])
         ]
+        Octokit.info(f"Conditions Names :: {conditions_names}")
         conditions_names = [
             ign.lower() for ign in policy.get("conditions", {}).get("names", [])
         ]
+        Octokit.info(f"Conditions Names :: {conditions_names}")
 
         for value in [license, dependency_full, dependency_name, dependency_short_name, dependency_spdxId]:
             Octokit.info(f"Dependency Value :: {value}")
@@ -453,8 +455,8 @@ class Policy:
                 Octokit.info(f"Dependency License Ignore :: {value}")
                 return False
             # annotate error and return true if name or id is defined as a condition
-            elif self.matchContent(value, condition_ids) or self.matchContent(
-                value, conditions_ids
+            elif self.matchContent(value, conditions_ids) or self.matchContent(
+                value, conditions_names
             ):
                 Octokit.error(
                     f"Dependency License Violation :: {dependency_full} == {license}"
