@@ -356,11 +356,11 @@ class Policy:
                         ign.lower()
                         for ign in policy.get("conditions", {}).get("names", [])
                     ]
-                    ingores_names = [
+                    ignores_names = [
                         ign.lower()
                         for ign in policy.get("ignores", {}).get("names", [])
                     ]
-                    if self.matchContent(check_name, ingores_names):
+                    if self.matchContent(check_name, ignores_names):
                         return False
                     elif self.matchContent(check_name, condition_names):
                         return True
@@ -371,10 +371,10 @@ class Policy:
                         ign.lower()
                         for ign in policy.get("conditions", {}).get("ids", [])
                     ]
-                    ingores_ids = [
+                    ignores_ids = [
                         ign.lower() for ign in policy.get("ignores", {}).get("ids", [])
                     ]
-                    if self.matchContent(check_id, ingores_ids):
+                    if self.matchContent(check_id, ignores_ids):
                         return False
                     elif self.matchContent(check_id, condition_ids):
                         return True
@@ -426,9 +426,9 @@ class Policy:
             )
 
         # gather ignore ids and names
-        ingore_ids = [ign.lower() for ign in policy.get("ingores", {}).get("ids", [])]
-        ingore_names = [
-            ign.lower() for ign in policy.get("ingores", {}).get("names", [])
+        ignore_ids = [ign.lower() for ign in policy.get("ignores", {}).get("ids", [])]
+        ignore_names = [
+            ign.lower() for ign in policy.get("ignores", {}).get("names", [])
         ]
 
         # gather condition ids and names
@@ -442,8 +442,8 @@ class Policy:
         for value in [license, dependency_full, dependency_name, dependency_short_name]:
 
             # return false (ignore) if name or id is defined in the ignore portion of the policy
-            if self.matchContent(value, ingore_ids) or self.matchContent(
-                value, ingore_names
+            if self.matchContent(value, ignore_ids) or self.matchContent(
+                value, ignore_names
             ):
                 return False
             # annotate error and return true if name or id is defined as a condition
