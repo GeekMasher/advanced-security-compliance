@@ -266,6 +266,7 @@ class Policy:
         # Wildcard matching
         for validator in validators:
             results = fnmatch.filter([name], validator)
+            Octokit.info(f"Matching {name} with {validator} :: {results}")
             if results:
                 return True
         return False
