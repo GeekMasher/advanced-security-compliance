@@ -37,3 +37,10 @@ jobs:
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
+      
+    - name: Generate dependencies action
+      uses: thedave42/generate-dependencies-csv-action@v5
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        org-name: cityblock
+        repo-names: commons
