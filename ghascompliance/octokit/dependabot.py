@@ -6,7 +6,7 @@ from ghascompliance.octokit.octokit import GitHub, OctoRequests, Octokit
 GRAPHQL_GET_INFO = """\
 {
     repository(owner: "$owner", name: "$repo") {
-        vulnerabilityAlerts(first: 100) {
+        vulnerabilityAlerts(first: 100, states: [OPEN]) {
             nodes {
                 createdAt
                 dismissReason
