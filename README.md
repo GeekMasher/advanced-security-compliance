@@ -16,7 +16,7 @@ Here is how you can quickly setup advanced-security-compliance.
 ```yaml
 # Compliance
 - name: Advance Security Compliance Action
-  uses: GeekMasher/advanced-security-compliance@v1.6
+  uses: GeekMasher/advanced-security-compliance@v1.6.1
 ```
 
 #### Action Examples
@@ -59,7 +59,7 @@ Here is an example of using a simple yet cross-organization using Policy as Code
 ```yaml
 # Compliance
 - name: Advance Security Compliance Action
-  uses: GeekMasher/advanced-security-compliance@v1.6
+  uses: GeekMasher/advanced-security-compliance@v1.6.1
   with:
     # The owner/repo of where the policy is stored  
     policy: GeekMasher/security-queries
