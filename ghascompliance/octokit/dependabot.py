@@ -77,9 +77,8 @@ GRAPHQL_DEPENDENCY_INFO = """\
 
 class Dependencies(OctoRequests):
     def __init__(self, github: GitHub):
-        instance = "https://api.github.com/graphql"
         super().__init__(github=github)
-
+        # Update the headers for
         self.headers["Accept"] = "application/vnd.github.hawkgirl-preview+json"
 
         self.dependencies = []
@@ -100,9 +99,10 @@ class Dependencies(OctoRequests):
         query = Template(GRAPHQL_GET_INFO).substitute(**variables)
 
         request = requests.post(
-            "https://api.github.com/graphql",
+            self.github.get("api.graphql"),
             json={"query": query},
             headers=self.headers,
+            timeout=30,
         )
 
         if request.status_code != 200:
@@ -141,9 +141,10 @@ class Dependencies(OctoRequests):
         query = Template(GRAPHQL_DEPENDENCY_INFO).substitute(**variables)
 
         request = requests.post(
-            "https://api.github.com/graphql",
+            self.github.get("api.graphql"),
             json={"query": query},
             headers=self.headers,
+            timeout=30,
         )
 
         if request.status_code != 200:

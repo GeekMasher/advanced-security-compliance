@@ -16,7 +16,7 @@ Here is how you can quickly setup advanced-security-compliance.
 ```yaml
 # Compliance
 - name: Advance Security Compliance Action
-  uses: GeekMasher/advanced-security-compliance@v1.6.2
+  uses: GeekMasher/advanced-security-compliance@v1.6.3
 ```
 
 #### Action Examples
