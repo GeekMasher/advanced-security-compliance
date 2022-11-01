@@ -14,11 +14,11 @@ name: GitHub App Authentication
 
 # ...
     - name: Generate GitHub token
-      uses: navikt/github-app-token-generator@2d70c12368d1958155af4d283f9f21c9a2a8cb98
+    - uses: tibdex/github-app-token@v1
       id: get-token
       with:
-        private-key: ${{ secrets.GIT_APP_PEM }}
-        app-id: ${{ secrets.GIT_APP_ID }}
+        private_key: ${{ secrets.GIT_APP_PRIVATE_KEY }}
+        app_id: ${{ secrets.GIT_APP_ID }}
 
     - name: Security Compliance Action
       uses: GeekMasher/advanced-security-compliance@v1.6.3

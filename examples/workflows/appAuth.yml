@@ -1,0 +1,39 @@
+name: Licensing Compliance
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+jobs:
+  licensing:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: tibdex/github-app-token@v1
+      id: get-token
+      with:
+        private_key: ${{ secrets.GIT_APP_PRIVATE_KEY }}
+        app_id: ${{ secrets.GIT_APP_ID }}
+
+    - name: Security Compliance Action
+      uses: GeekMasher/advanced-security-compliance@main
+      with:
+        policy: KPMG-UK/security-compliance
+        # The local (within the workspace) or repository
+        policy-path: policies/kpmg-uk.yml
+        # The branch you want to target
+        policy-branch: main
+
+        # The branch you want to target using `policy` argument
+        # policy-branch: main
+
+        # GitHub Personal Access Token to access the GitHub API.
+        # Secret Scanning and Dependabot do not allow their resources to be
+        #  exposed to Actions so this might need to be set using a token that has 
+        #  the ability to access the resources
+        token: ${{ steps.get-token.outputs.token }}
+        action: continue
+        argvs: '--is-github-app-token'
