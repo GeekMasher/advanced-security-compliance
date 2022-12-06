@@ -224,7 +224,7 @@ Some things to consider when using imports:
 
 ## Dependency Typosquatting
 
-Dependency Typosquatting is a package or library will malicious intent to compromise supply chains or CI systems by extracting data from the environment to a threat actor.
+Dependency Typosquatting is a package or library with malicious intent to compromise supply chains or CI systems by extracting data from the environment to a threat actor.
 
 Built into this tool is the ability to look up every package known in your supply chain from the GitHub Dependency Graph and check if it matches against [a list of know malicious packages](ghascompliance/defaults/typosquatting.txt).
 
