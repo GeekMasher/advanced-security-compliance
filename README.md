@@ -1,6 +1,12 @@
 # advanced-security-compliance
 
-This Action was designed to allow users to configure their Risk threshold for security issues reported by [GitHub Code Scanning](https://docs.github.com/en/code-security/secure-coding/automatically-scanning-your-code-for-vulnerabilities-and-errors/about-code-scanning), [Secret Scanning](https://docs.github.com/en/code-security/secret-security/about-secret-scanning) and [Dependabot Security](https://docs.github.com/en/code-security/supply-chain-security/managing-vulnerabilities-in-your-projects-dependencies/configuring-dependabot-security-updates#about-configuring-dependabot-security-updates).
+This Action was designed to allow users to configure their Risk threshold for security issues reported by the following GitHub technologies:
+
+- [GitHub Code Scanning](https://docs.github.com/en/code-security/secure-coding/automatically-scanning-your-code-for-vulnerabilities-and-errors/about-code-scanning)
+- [Secret Scanning](https://docs.github.com/en/code-security/secret-security/about-secret-scanning)
+- Dependency Analysis (Dependency Graph + Dependabot)
+  - [Security Vulnerabilities](https://docs.github.com/en/code-security/supply-chain-security/managing-vulnerabilities-in-your-projects-dependencies/about-alerts-for-vulnerable-dependencies)
+  - [Licensing (dependency graph)](https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/about-the-dependency-graph)
 
 
 ## Setup
@@ -47,6 +53,16 @@ pipenv run python -m ghascompliance
 - [Code Scanning](examples/scripts/codescanning.sh)
 - [Dependencies](examples/scripts/dependencies.sh)
 - [Policies](examples/scripts/policies.sh)
+
+
+## Configuration
+
+
+
+```yaml
+
+
+```
 
 ## Policy as Code / PaC
 

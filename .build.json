@@ -1,0 +1,4 @@
+{
+    "main": "pipenv run python -m ghascompliance --help",
+    "test": "pipenv run tests"
+}
