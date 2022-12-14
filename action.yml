@@ -49,6 +49,9 @@ runs:
         echo "::endgroup::"
     - shell: bash
       run: |
+        echo "::error ::This Action has been moved to `advanced-security/policy-as-code`"
+        echo "::error ::The Action is pinned to 1.7.0 and will no longer receive any updates going forward"
+
         PYTHONPATH=${{ github.action_path }} && export PYTHONPATH=${{ github.action_path }}
         python3 -m ghascompliance \
           --severity "${{ inputs.severity }}" \

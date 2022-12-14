@@ -1,4 +1,8 @@
+:warning: This repository is no longer maintained after v1.7.0! :warning:
+
 # advanced-security-compliance
+
+Please use the [GitHub Advanced Security Policy as Code](https://github.com/advanced-security/policy-as-code) action / repository instead.
 
 This Action was designed to allow users to configure their Risk threshold for security issues reported by [GitHub Code Scanning](https://docs.github.com/en/code-security/secure-coding/automatically-scanning-your-code-for-vulnerabilities-and-errors/about-code-scanning), [Secret Scanning](https://docs.github.com/en/code-security/secret-security/about-secret-scanning) and [Dependabot Security](https://docs.github.com/en/code-security/supply-chain-security/managing-vulnerabilities-in-your-projects-dependencies/configuring-dependabot-security-updates#about-configuring-dependabot-security-updates).
 
@@ -16,7 +20,7 @@ Here is how you can quickly setup advanced-security-compliance.
 ```yaml
 # Compliance
 - name: Advance Security Compliance Action
-  uses: GeekMasher/advanced-security-compliance@v1.6.3
+  uses: GeekMasher/advanced-security-compliance@v1.7.0
 ```
 
 #### Action Examples
@@ -59,7 +63,7 @@ Here is an example of using a simple yet cross-organization using Policy as Code
 ```yaml
 # Compliance
 - name: Advance Security Compliance Action
-  uses: GeekMasher/advanced-security-compliance@v1.6.2
+  uses: GeekMasher/advanced-security-compliance@v1.7.0
   with:
     # The owner/repo of where the policy is stored  
     policy: GeekMasher/security-queries
